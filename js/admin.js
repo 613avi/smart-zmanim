@@ -252,11 +252,55 @@
     ['sunset',           'שקיעת החמה'],
     ['tzeit',            'צאת הכוכבים'],
   ];
+  // hebcal method map (matches display.js ZMANIM_DEFS)
+  const ZMANIM_FN = {
+    alotHaShachar:    z => z.alotHaShachar(),
+    misheyakir:       z => z.misheyakir(),
+    sunrise:          z => z.sunrise(),
+    sofZmanShmaMGA:   z => z.sofZmanShmaMGA(),
+    sofZmanShma:      z => z.sofZmanShma(),
+    sofZmanTfillaMGA: z => z.sofZmanTfillaMGA(),
+    sofZmanTfilla:    z => z.sofZmanTfilla(),
+    chatzot:          z => z.chatzot(),
+    minchaGedola:     z => z.minchaGedola(),
+    minchaKetana:     z => z.minchaKetana(),
+    plagHaMincha:     z => z.plagHaMincha(),
+    sunset:           z => z.sunset(),
+    tzeit:            z => z.tzeit(),
+  };
+
+  function computeDefaultZmanim() {
+    const out = {};
+    try {
+      const h = window.hebcal;
+      if (!h || !h.GeoLocation || !h.Zmanim) return out;
+      const loc = state.data.config.location || {};
+      const geo = new h.GeoLocation(
+        state.data.config.synagogueName || 'site',
+        Number(loc.latitude) || 0,
+        Number(loc.longitude) || 0,
+        0,
+        loc.timezone || 'Asia/Jerusalem'
+      );
+      const z = new h.Zmanim(geo, new Date());
+      for (const key of Object.keys(ZMANIM_FN)) {
+        try {
+          const d = ZMANIM_FN[key](z);
+          if (d instanceof Date && !isNaN(d)) {
+            out[key] = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+          }
+        } catch {}
+      }
+    } catch {}
+    return out;
+  }
+
   function renderZmanim() {
     const grid = qs('#zmanim-grid');
     grid.innerHTML = '';
     const displayed = state.data.config.displayedZmanim || {};
     const overrides = state.data.config.zmanimOverrides || {};
+    const defaults = computeDefaultZmanim();
     for (const [key, label] of ZMANIM_KEYS) {
       const row = el('div', { class: 'zmanim-row' });
       const cb = el('input', { type: 'checkbox' });
@@ -265,9 +309,9 @@
         state.data.config.displayedZmanim[key] = cb.checked;
         markDirty();
       });
-      const ov = el('input', { type: 'text', placeholder: 'חישוב אוטומטי', maxlength: '5' });
+      const ov = el('input', { type: 'text', placeholder: defaults[key] || 'HH:MM', maxlength: '5' });
       ov.value = overrides[key] || '';
-      ov.style.width = '6rem';
+      ov.style.width = '5.5rem';
       ov.style.direction = 'ltr';
       ov.style.textAlign = 'center';
       ov.addEventListener('input', () => {
@@ -277,8 +321,9 @@
         markDirty();
       });
       const lbl = el('label', {}, cb, el('span', { class: 'zm-label' }, label));
+      const defStr = defaults[key] ? `ברירת מחדל: ${defaults[key]}` : '';
       row.appendChild(lbl);
-      row.appendChild(el('span', { class: 'zm-ov-label small' }, 'דריסה:'));
+      row.appendChild(el('span', { class: 'zm-default small' }, defStr));
       row.appendChild(ov);
       grid.appendChild(row);
     }
@@ -466,8 +511,6 @@
     { name: 'שושן פורים',      day: 15, month: 'אדר' },
     { name: 'פסח א׳',          day: 15, month: 'ניסן' },
     { name: 'שביעי של פסח',    day: 21, month: 'ניסן' },
-    { name: 'יום הזכרון',      day: 4,  month: 'אייר' },
-    { name: 'יום העצמאות',     day: 5,  month: 'אייר' },
     { name: 'ל״ג בעומר',       day: 18, month: 'אייר' },
     { name: 'יום ירושלים',     day: 28, month: 'אייר' },
     { name: 'שבועות',          day: 6,  month: 'סיון' },

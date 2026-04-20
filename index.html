@@ -32,19 +32,29 @@
         <main class="display-main">
             <section class="card zmanim-card">
                 <h2>זמני היום</h2>
-                <table id="zmanim-table"><tbody></tbody></table>
+                <div class="scroll-viewport">
+                    <div class="scroll-inner">
+                        <table id="zmanim-table"><tbody></tbody></table>
+                    </div>
+                </div>
             </section>
 
             <section class="card tefillot-card">
                 <h2 id="tefillot-title">זמני תפילות</h2>
-                <div id="tefillot-rooms"></div>
+                <div class="scroll-viewport">
+                    <div class="scroll-inner" id="tefillot-rooms"></div>
+                </div>
             </section>
 
             <section class="card memorial-card" id="memorial-card">
                 <h2>לעילוי נשמת</h2>
-                <ul id="memorial-list"></ul>
+                <div class="scroll-viewport">
+                    <ul id="memorial-list" class="scroll-inner"></ul>
+                </div>
             </section>
         </main>
+
+        <div class="mentions-bar" id="mentions-bar" style="display:none;"></div>
 
         <div class="announcements-container" id="announcements-container">
             <div id="announcements-ticker"></div>

@@ -184,6 +184,71 @@
       omerEl.textContent = omerText;
       omerEl.style.display = omerText ? '' : 'none';
     }
+
+    renderMentions(hdate);
+  }
+
+  // ---------- tefilla mentions (winter/summer, rain request, ya'aleh v'yavo, al hanisim) ----------
+  function computeTefillaMentions(hdate) {
+    const m = hdate.getMonth(); // 1=Nisan .. 7=Tishrei .. 13=Adar II
+    const d = hdate.getDate();
+    const out = [];
+
+    // משיב הרוח ומוריד הגשם (Shemini Atzeret musaf through Pesach day-1 musaf)
+    // Simplified by calendar day:
+    // Winter: 22 Tishrei → 14 Nisan inclusive. Else "מוריד הטל".
+    const isWinter =
+      (m === 7 && d >= 22) ||
+      (m >= 8 && m <= 13) ||
+      (m === 1 && d <= 14);
+    out.push(isWinter ? 'משיב הרוח ומוריד הגשם' : 'מוריד הטל');
+
+    // ותן טל ומטר (Israel): 7 Cheshvan → 14 Nisan; else ותן ברכה
+    const rainRequest =
+      (m === 8 && d >= 7) ||
+      (m >= 9 && m <= 13) ||
+      (m === 1 && d <= 14);
+    out.push(rainRequest ? 'ותן טל ומטר לברכה' : 'ותן ברכה');
+
+    // יעלה ויבוא (Rosh Chodesh or Chol Hamoed in Israel)
+    let yaaleh = false;
+    if (d === 1) yaaleh = true;
+    else if (d === 30) {
+      try {
+        const daysInMonth = HDate.daysInMonth(m, hdate.getFullYear());
+        if (daysInMonth === 30) yaaleh = true; // the 30th is Rosh Chodesh eve day
+      } catch {}
+    }
+    // Chol hamoed (Israel): Nisan 16-20, Tishrei 16-21
+    if (m === 1 && d >= 16 && d <= 20) yaaleh = true;
+    if (m === 7 && d >= 16 && d <= 21) yaaleh = true;
+    if (yaaleh) out.push('יעלה ויבוא');
+
+    // על הניסים — Chanukah (25 Kislev through 2-3 Tevet) and Purim (14-15 Adar last-Adar)
+    let alHanisim = false;
+    if (m === 9 && d >= 25) alHanisim = true;             // Kislev 25-30
+    if (m === 10 && d <= 3) alHanisim = true;              // Tevet 1-3
+    const lastAdar = (() => {
+      try { return HDate.isLeapYear(hdate.getFullYear()) ? 13 : 12; }
+      catch { return 12; }
+    })();
+    if (m === lastAdar && (d === 14 || d === 15)) alHanisim = true; // Purim + Shushan Purim
+    if (alHanisim) out.push('על הניסים');
+
+    return out;
+  }
+
+  function renderMentions(hdate) {
+    const bar = qs('#mentions-bar');
+    if (!bar) return;
+    try {
+      const items = computeTefillaMentions(hdate);
+      if (!items.length) { bar.style.display = 'none'; return; }
+      bar.innerHTML = items.map(t => `<span class="mention">${t}</span>`).join('');
+      bar.style.display = '';
+    } catch (e) {
+      bar.style.display = 'none';
+    }
   }
 
   function renderClock() {
@@ -251,27 +316,50 @@
     updateAutoScroll(qs('.zmanim-card'));
   }
 
-  // ---------- auto-scroll for cards that overflow ----------
-  function updateAutoScroll(el) {
-    if (!el) return;
-    clearInterval(el._scrollTimer);
-    el._scrollTimer = null;
-    el._scrollDir = 0;
-    el.scrollTop = 0;
-    // Defer: layout must settle
+  // ---------- seamless loop scroll ----------
+  // Clones the content once; animates translateY 0 -> -50% (one full content height)
+  // infinitely, so as the original scrolls off the top the clone enters from the bottom.
+  function updateAutoScroll(cardEl) {
+    if (!cardEl) return;
+    const viewport = cardEl.querySelector('.scroll-viewport');
+    const inner = viewport && viewport.querySelector('.scroll-inner');
+    if (!viewport || !inner) return;
+
+    // Reset
+    inner.classList.remove('scrolling');
+    inner.style.animationDuration = '';
+    inner.removeAttribute('data-cloned');
+    inner.querySelectorAll(':scope > [data-clone="1"]').forEach(c => c.remove());
+
     requestAnimationFrame(() => {
-      if (el.scrollHeight - el.clientHeight <= 4) return;
-      el._scrollDir = 1;
-      el._scrollHold = 40; // pause ticks at edges
-      el._scrollTimer = setInterval(() => {
-        if (el._scrollHold > 0) { el._scrollHold--; return; }
-        el.scrollTop += el._scrollDir;
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
-          el._scrollDir = -1; el._scrollHold = 40;
-        } else if (el.scrollTop <= 0) {
-          el._scrollDir = 1; el._scrollHold = 40;
+      const vh = viewport.clientHeight;
+      const ch = inner.scrollHeight;
+      if (ch <= vh + 2) return;
+
+      // Clone current children into a single wrapper and append
+      const wrap = document.createElement(inner.tagName === 'UL' ? 'li' : 'div');
+      wrap.setAttribute('data-clone', '1');
+      if (inner.tagName === 'UL') {
+        // For a UL, the clone wrapper should be an LI whose children are clones of the original LIs.
+        // Simpler: put the clones straight under the UL as additional LIs.
+        const orig = Array.from(inner.children);
+        for (const c of orig) {
+          const clone = c.cloneNode(true);
+          clone.setAttribute('data-clone', '1');
+          inner.appendChild(clone);
         }
-      }, 50);
+      } else {
+        for (const child of Array.from(inner.children)) {
+          wrap.appendChild(child.cloneNode(true));
+        }
+        inner.appendChild(wrap);
+      }
+      inner.setAttribute('data-cloned', '1');
+
+      // Speed: ~40px per second (slow, readable)
+      const duration = Math.max(ch / 28, 20);
+      inner.style.animationDuration = `${duration}s`;
+      inner.classList.add('scrolling');
     });
   }
 

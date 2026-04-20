@@ -114,8 +114,14 @@
         <!-- Zmanim -->
         <div class="tab-content" data-tab="zmanim">
             <div class="panel">
-                <h2>זמני היום להצגה</h2>
-                <p class="small">בחרו אילו זמנים יוצגו על הלוח. הזמנים מחושבים אוטומטית לפי המיקום.</p>
+                <h2>ניהול זמני היום (הלכתיים)</h2>
+                <p class="small">
+                    לכל זמן: <strong>סמנו בצ׳ק־בוקס</strong> אם להציג על הלוח.
+                    <strong>שדה הדריסה</strong> מאפשר להזין שעה קבועה (HH:MM) שתדרוס את החישוב האוטומטי —
+                    שימושי למשל להגדיר "הנץ הנראה" לפי ההר שרואים מהבית כנסת במקום חישוב תיאורטי.
+                    השאירו ריק כדי להשתמש בברירת המחדל המחושבת לפי המיקום.
+                    <strong>ברירת המחדל</strong> המחושבת היום מוצגת ליד השדה.
+                </p>
                 <div class="zmanim-grid" id="zmanim-grid"></div>
             </div>
         </div>
@@ -209,6 +215,7 @@
 
 <div class="status-bar" id="status-bar"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@hebcal/core@5.10.1/dist/bundle.min.js"></script>
 <script src="js/github.js"></script>
 <script src="js/admin.js"></script>
 </body>

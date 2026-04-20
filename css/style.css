@@ -25,7 +25,7 @@ body { min-height: 100vh; }
 
 #display-root {
     display: grid;
-    grid-template-rows: auto 1fr auto auto;
+    grid-template-rows: auto 1fr auto auto auto;
     height: 100vh;
     padding: 1.5vh 2vw;
     gap: 1.5vh;
@@ -115,8 +115,10 @@ body { min-height: 100vh; }
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: clamp(1rem, 1.8vw, 1.8rem);
-    overflow-y: auto;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 .card h2 {
     margin: 0 0 1rem;
@@ -126,6 +128,31 @@ body { min-height: 100vh; }
     font-size: clamp(1.4rem, 2vw, 2.2rem);
     font-weight: 700;
     font-family: 'Frank Ruhl Libre', serif;
+    flex: 0 0 auto;
+}
+.scroll-viewport {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4%, #000 96%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 4%, #000 96%, transparent 100%);
+}
+.scroll-inner {
+    will-change: transform;
+}
+.scroll-inner.scrolling {
+    animation-name: sz-scroll-up;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+@keyframes sz-scroll-up {
+    0%   { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(0, -50%, 0); }
+}
+/* A visual gap between the original content and its clone so transition is smooth */
+.scroll-inner[data-cloned="1"] > [data-clone="1"] {
+    margin-top: 1rem;
 }
 
 .zmanim-card table, .tefillot-card table {
@@ -256,6 +283,26 @@ body { min-height: 100vh; }
     color: var(--text-dim);
     font-size: clamp(0.9rem, 1.1vw, 1.2rem);
     padding: 0.4rem 0;
+}
+
+.mentions-bar {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    font-size: clamp(0.95rem, 1.3vw, 1.4rem);
+    padding: 0.5rem 0.8rem;
+    border-radius: 10px;
+    background: rgba(138, 180, 248, 0.08);
+    border: 1px solid rgba(138, 180, 248, 0.25);
+}
+.mentions-bar .mention {
+    color: var(--accent-2);
+    font-weight: 600;
+    padding: 0.1rem 0.6rem;
+}
+.mentions-bar .mention + .mention {
+    border-inline-start: 1px solid rgba(138, 180, 248, 0.3);
 }
 
 /* mobile */
@@ -459,12 +506,19 @@ table.data-table .col-actions { width: 80px; text-align: center; }
 .zmanim-row {
     display: grid;
     grid-template-columns: 1fr auto auto;
-    gap: 0.5rem;
+    gap: 0.7rem;
     align-items: center;
     padding: 0.5rem 0.75rem;
     border: 1px solid #e6e9f0;
     border-radius: 6px;
     background: #fafbfd;
+}
+.zmanim-row .zm-default {
+    color: #888;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    min-width: 9ch;
+    text-align: left;
 }
 .zmanim-row label {
     display: flex;
