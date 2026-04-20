@@ -589,9 +589,21 @@
     } catch { /* ignore */ }
   }
 
+  function applyDesign() {
+    if (!state.config || !state.config.design) return;
+    const theme = state.config.design.theme || 'dark';
+    const layout = state.config.design.layout || '3col';
+
+    document.body.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    const root = qs('#display-root');
+    if (root) root.setAttribute('data-layout', layout);
+  }
+
   async function refreshAll() {
     try {
       await loadData();
+      applyDesign();
       renderHeader();
       renderZmanim();
       renderTefillot();
