@@ -2,12 +2,21 @@
 // Loads data/*.json from the repo, renders a kiosk-style synagogue board.
 
 (() => {
-  const { HDate, Location, Zmanim, HebrewCalendar, flags, Locale } = window.hebcal;
+  const { HDate, GeoLocation, Zmanim, HebrewCalendar, flags, Locale } = window.hebcal;
   const FLAG_PARSHA = (flags && flags.PARSHA_HASHAVUA) || 1024;
   const FLAG_CHAG = (flags && flags.CHAG) || 1;
   const hebMonth = (hdate) => {
     try { return Locale.gettext(hdate.getMonthName(), 'he'); }
     catch { return hdate.getMonthName(); }
+  };
+  const makeGeo = () => {
+    const { latitude, longitude, timezone } = state.config.location;
+    return new GeoLocation(
+      state.config.synagogueName || 'site',
+      Number(latitude), Number(longitude),
+      0,
+      timezone || 'Asia/Jerusalem'
+    );
   };
 
   const HEB_MONTHS = ['ניסן','אייר','סיון','תמוז','אב','אלול','תשרי','חשון','כסלו','טבת','שבט','אדר','אדר א׳','אדר ב׳'];
@@ -114,10 +123,7 @@
   }
 
   function getZmanimForToday() {
-    const loc = state.config.location;
-    const now = new Date();
-    const zmanim = new Zmanim(now, loc.latitude, loc.longitude);
-    return zmanim;
+    return new Zmanim(makeGeo(), new Date());
   }
 
   const ZMANIM_DEFS = [
@@ -174,7 +180,7 @@
   }
 
   function computeShabbatTimes(room) {
-    const loc = state.config.location;
+    const geo = makeGeo();
     const now = new Date();
     const dow = now.getDay(); // 0=Sun..6=Sat
     // find this friday (if today is sat, use today-1)
@@ -188,8 +194,8 @@
     friday.setHours(12, 0, 0, 0);
     const saturday = new Date(friday); saturday.setDate(friday.getDate() + 1);
 
-    const zFri = new Zmanim(friday, loc.latitude, loc.longitude);
-    const zSat = new Zmanim(saturday, loc.latitude, loc.longitude);
+    const zFri = new Zmanim(geo, friday);
+    const zSat = new Zmanim(geo, saturday);
 
     // candle lighting default 18 min before sunset (israel often uses 40 in Jerusalem; keep 18)
     const candleMinutes = state.config.location.candleLightingMinutes || 18;
