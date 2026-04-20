@@ -18,7 +18,9 @@
     "minchaKetana": true,
     "plagHaMincha": true,
     "sunset": true,
-    "tzeit": true
+    "tzeit": true,
+    "sofZmanShmaMGA": true,
+    "sofZmanTfillaMGA": true
   },
   "theme": {
     "accent": "#d4af37",
