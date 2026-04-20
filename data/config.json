@@ -1,0 +1,30 @@
+{
+  "synagogueName": "בית הכנסת המרכזי",
+  "location": {
+    "address": "ירושלים",
+    "latitude": 31.778,
+    "longitude": 35.235,
+    "timezone": "Asia/Jerusalem"
+  },
+  "displayedZmanim": {
+    "alotHaShachar": true,
+    "misheyakir": false,
+    "sunrise": true,
+    "sofZmanShma": true,
+    "sofZmanTfilla": true,
+    "chatzot": true,
+    "minchaGedola": true,
+    "minchaKetana": false,
+    "plagHaMincha": false,
+    "sunset": true,
+    "tzeit": true
+  },
+  "theme": {
+    "accent": "#d4af37",
+    "background": "#0e1320"
+  },
+  "rotation": {
+    "enabled": false,
+    "intervalSeconds": 20
+  }
+}

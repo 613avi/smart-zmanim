@@ -2,103 +2,233 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ממשק ניהול - לוח זמנים</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; }
-        .checkbox-group label { display: inline-block; margin-left: 10px; }
-        fieldset { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; }
-        legend { font-weight: bold; font-size: 1.2em; }
-        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; font-size: 1.1em; }
-        textarea { width: 100%; height: 300px; direction: ltr; text-align: left; margin-top: 20px; }
-        .instructions { background: #f0f0f0; padding: 15px; border-radius: 5px; border-right: 5px solid #007bff; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet">
 </head>
-<body>
-    <h1>ממשק ניהול ללוח זמנים</h1>
-    <p class="instructions">
-        <strong>הוראות:</strong> מלא את כל השדות, לחץ על "צור קוד הגדרות", העתק את כל הקוד שיופיע בתיבה למטה והדבק אותו בקובץ <code>config.js</code> במאגר ה-GitHub שלך.
-    </p>
-    
-    <form id="config-form">
-        <fieldset>
-            <legend>הגדרות כלליות</legend>
-            <div class="form-group">
-                <label for="synagogueName">שם בית הכנסת:</label>
-                <input type="text" id="synagogueName" required>
+<body class="admin-body">
+
+<!-- Login -->
+<div id="login-view">
+    <div class="login-box">
+        <h2>כניסה לממשק הניהול</h2>
+        <div class="field">
+            <label for="login-owner">מאגר GitHub (owner/repo)</label>
+            <input type="text" id="login-owner" placeholder="username/smart-zmanim">
+            <div class="desc">יזוהה אוטומטית אם האתר פועל מ־GitHub Pages.</div>
+        </div>
+        <div class="field">
+            <label for="login-token">GitHub Personal Access Token</label>
+            <input type="password" id="login-token" placeholder="github_pat_...">
+            <div class="desc">Fine-grained, הרשאת <code class="inline">Actions: Read &amp; Write</code> על המאגר בלבד. נשמר רק בדפדפן שלך.</div>
+        </div>
+        <div class="field">
+            <label for="login-password">סיסמת ניהול</label>
+            <input type="password" id="login-password" placeholder="הסיסמה שהוגדרה ב־Secret בשם ADMIN_PASSWORD">
+            <div class="desc">לא יוצאת מהדפדפן — נשלחת לאימות מול ה־Secret בשם <code class="inline">ADMIN_PASSWORD</code>.</div>
+        </div>
+        <button class="btn btn-primary" id="login-btn" style="width:100%;margin-top:0.5rem;">כניסה</button>
+        <div class="hint" id="login-msg"></div>
+        <div class="hint">
+            הוראות מלאות להקמה נמצאות בקובץ <code class="inline">README.md</code>.
+        </div>
+    </div>
+</div>
+
+<!-- App -->
+<div id="app-view" style="display:none;">
+    <div class="admin-topbar">
+        <h1>לוח זמנים — ניהול</h1>
+        <div class="actions">
+            <a href="index.html" target="_blank" class="btn btn-ghost btn-sm">פתיחת הצג</a>
+            <button class="btn btn-primary btn-sm" id="save-all-btn">שמירה ופרסום</button>
+            <button class="btn btn-ghost btn-sm" id="logout-btn">יציאה</button>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <div class="unsaved-indicator" id="unsaved">יש שינויים שלא נשמרו. לחצו "שמירה ופרסום" כדי לפרסם אותם לאתר.</div>
+
+        <div class="tab-bar">
+            <button class="active" data-tab="general">כללי</button>
+            <button data-tab="rooms">חדרי תפילה</button>
+            <button data-tab="zmanim">זמני היום</button>
+            <button data-tab="memorial">לעילוי נשמת</button>
+            <button data-tab="announcements">הודעות</button>
+            <button data-tab="special">זמנים מיוחדים</button>
+            <button data-tab="settings">הגדרות</button>
+        </div>
+
+        <!-- General -->
+        <div class="tab-content active" data-tab="general">
+            <div class="panel">
+                <h2>הגדרות כלליות</h2>
+                <div class="field">
+                    <label for="g-name">שם בית הכנסת</label>
+                    <input type="text" id="g-name">
+                </div>
+                <h3>מיקום</h3>
+                <div class="field">
+                    <label for="g-address">כתובת</label>
+                    <div style="display:flex;gap:0.5rem;">
+                        <input type="text" id="g-address" placeholder="לדוגמה: יפו 97, ירושלים">
+                        <button class="btn btn-ghost" id="g-geocode">איתור</button>
+                    </div>
+                    <div class="desc" id="g-geocode-status"></div>
+                </div>
+                <div class="row-3">
+                    <div class="field">
+                        <label for="g-lat">קו רוחב</label>
+                        <input type="number" step="any" id="g-lat">
+                    </div>
+                    <div class="field">
+                        <label for="g-lon">קו אורך</label>
+                        <input type="number" step="any" id="g-lon">
+                    </div>
+                    <div class="field">
+                        <label for="g-tz">אזור זמן</label>
+                        <input type="text" id="g-tz" placeholder="Asia/Jerusalem">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="g-candle">הדלקת נרות — דקות לפני שקיעה</label>
+                    <input type="number" id="g-candle" value="18">
+                    <div class="desc">בירושלים נהוג 40 דקות. בדרך כלל 18.</div>
+                </div>
             </div>
-        </fieldset>
-        
-        <fieldset>
-    <legend>מיקום</legend>
-    <div class="form-group">
-        <label for="address">הזן כתובת מלאה ולחץ על "איתור":</label>
-        <input type="text" id="address" placeholder="לדוגמה: רחוב יפו 97, ירושלים">
-        <button type="button" id="geocode-btn" style="margin-top: 5px;">איתור מיקום</button>
-        <p id="geocode-status" style="font-size: 0.9em;"></p>
-    </div>
-    <div class="form-group">
-        <label for="latitude">קו רוחב (Latitude) - מתעדכן אוטומטית:</label>
-        <input type="number" step="any" id="latitude" required readonly>
-    </div>
-    <div class="form-group">
-        <label for="longitude">קו אורך (Longitude) - מתעדכן אוטומטית:</label>
-        <input type="number" step="any" id="longitude" required readonly>
-    </div>
-    <div class="form-group">
-        <label for="timezone">אזור זמן (לדוגמה: Asia/Jerusalem):</label>
-        <input type="text" id="timezone" required>
-    </div>
-</fieldset>
+        </div>
 
-        <fieldset>
-            <legend>זמני היום להצגה</legend>
-            <div class="checkbox-group">
-                <input type="checkbox" id="alotHaShachar"><label for="alotHaShachar">עלות השחר</label>
-                <input type="checkbox" id="netzHaChama"><label for="netzHaChama">הנץ החמה</label>
-                <input type="checkbox" id="sofZmanShma"><label for="sofZmanShma">סוף זמן ק"ש</label>
-                <input type="checkbox" id="sofZmanTfilla"><label for="sofZmanTfilla">סוף זמן תפילה</label>
-                <input type="checkbox" id="chatzot"><label for="chatzot">חצות היום</label>
-                <input type="checkbox" id="minchaGedola"><label for="minchaGedola">מנחה גדולה</label>
-                <input type="checkbox" id="plagHaMincha"><label for="plagHaMincha">פלג המנחה</label>
-                <input type="checkbox" id="shkia"><label for="shkia">שקיעה</label>
-                <input type="checkbox" id="tzeitHaKochavim"><label for="tzeitHaKochavim">צאת הכוכבים</label>
+        <!-- Rooms -->
+        <div class="tab-content" data-tab="rooms">
+            <div class="panel">
+                <h2>חדרי תפילה</h2>
+                <p class="small">ניתן להגדיר מספר מניינים/חדרים, לכל אחד זמני תפילה משלו. בדף הראשי אפשר לעבור בין החדרים באמצעות הכפתורים בראש הדף.</p>
+                <div id="rooms-list"></div>
+                <button class="btn btn-ghost" id="add-room-btn">+ חדר חדש</button>
             </div>
-        </fieldset>
-        
-        <fieldset>
-            <legend>זמני תפילות</legend>
-            <h4>יום חול</h4>
-            <div class="form-group"><label for="wd-shacharit">שחרית:</label><input type="text" id="wd-shacharit" placeholder="HH:MM"></div>
-            <div class="form-group"><label for="wd-mincha">מנחה:</label><input type="text" id="wd-mincha" placeholder="HH:MM"></div>
-            <div class="form-group"><label for="wd-arvit">ערבית:</label><input type="text" id="wd-arvit" placeholder="HH:MM"></div>
-            <h4>שבת</h4>
-            <div class="form-group"><label for="sh-minchaErev">דקות לפני הדלקת נרות למנחה (מספר שלילי):</label><input type="number" id="sh-minchaErev"></div>
-            <div class="form-group"><label for="sh-shacharit">שחרית:</label><input type="text" id="sh-shacharit" placeholder="HH:MM"></div>
-            <div class="form-group"><label for="sh-mincha">מנחה:</label><input type="text" id="sh-mincha" placeholder="HH:MM"></div>
-            <div class="form-group"><label for="sh-arvitMotzash">דקות אחרי צאת השבת לערבית (מספר חיובי):</label><input type="number" id="sh-arvitMotzash"></div>
-        </fieldset>
+        </div>
 
-        <fieldset>
-    <legend>הגדרות מתקדמות (אופציונלי)</legend>
-    <div class="form-group">
-        <label for="customTimesSheetUrl">קישור לקובץ "זמנים מיוחדים" (CSV שפורסם):</label>
-        <input type="text" id="customTimesSheetUrl" placeholder="הדבק כאן את הקישור מגוגל שיטס">
+        <!-- Zmanim -->
+        <div class="tab-content" data-tab="zmanim">
+            <div class="panel">
+                <h2>זמני היום להצגה</h2>
+                <p class="small">בחרו אילו זמנים יוצגו על הלוח. הזמנים מחושבים אוטומטית לפי המיקום.</p>
+                <div class="zmanim-grid" id="zmanim-grid"></div>
+            </div>
+        </div>
+
+        <!-- Memorial -->
+        <div class="tab-content" data-tab="memorial">
+            <div class="panel">
+                <h2>לוח הנצחות</h2>
+                <p class="small">רשימת הנפטרים עם תאריך היארצייט העברי. שמות שחל היום יאריצייט שלהם יודגשו על הלוח.</p>
+
+                <h3>העלאת CSV</h3>
+                <label class="file-drop" id="mem-drop">
+                    <input type="file" accept=".csv,text/csv" id="mem-file">
+                    <div>גררו לכאן קובץ CSV או לחצו לבחירה</div>
+                    <div class="small">עמודות נתמכות: שם, יום, חודש, הערות. הקובץ יחליף את הרשימה הנוכחית.</div>
+                </label>
+                <div style="margin-top:0.5rem;">
+                    <button class="btn btn-ghost btn-sm" id="mem-download">הורדת CSV נוכחי</button>
+                    <button class="btn btn-ghost btn-sm" id="mem-clear">ניקוי הכל</button>
+                </div>
+
+                <h3>עריכה</h3>
+                <table class="data-table" id="mem-table">
+                    <thead>
+                        <tr>
+                            <th>שם</th>
+                            <th style="width:90px;">יום</th>
+                            <th style="width:140px;">חודש עברי</th>
+                            <th>הערות</th>
+                            <th class="col-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn btn-ghost btn-sm" id="add-mem-btn" style="margin-top:0.5rem;">+ שורה חדשה</button>
+            </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="tab-content" data-tab="announcements">
+            <div class="panel">
+                <h2>הודעות לציבור</h2>
+                <p class="small">ההודעות יוצגו כבאנר מתחת לטבלה. הגדירו תאריך התחלה/סיום כדי לתזמן.</p>
+                <table class="data-table" id="ann-table">
+                    <thead>
+                        <tr>
+                            <th>תוכן</th>
+                            <th style="width:140px;">התחלה</th>
+                            <th style="width:140px;">סיום</th>
+                            <th class="col-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn btn-ghost btn-sm" id="add-ann-btn" style="margin-top:0.5rem;">+ הודעה חדשה</button>
+            </div>
+        </div>
+
+        <!-- Special times -->
+        <div class="tab-content" data-tab="special">
+            <div class="panel">
+                <h2>זמני תפילה מיוחדים</h2>
+                <p class="small">דריסת זמני תפילה בתאריך לועזי ספציפי, למשל חגים, ימי זיכרון, אירועים מיוחדים.</p>
+
+                <h3>העלאת CSV</h3>
+                <label class="file-drop">
+                    <input type="file" accept=".csv,text/csv" id="sp-file">
+                    <div>CSV עם עמודות: תאריך (YYYY-MM-DD), חדר (אופציונלי, מזהה), תפילה, שעה</div>
+                </label>
+
+                <h3>עריכה</h3>
+                <table class="data-table" id="sp-table">
+                    <thead>
+                        <tr>
+                            <th style="width:140px;">תאריך</th>
+                            <th style="width:160px;">חדר</th>
+                            <th>שם התפילה</th>
+                            <th style="width:100px;">שעה</th>
+                            <th class="col-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn btn-ghost btn-sm" id="add-sp-btn" style="margin-top:0.5rem;">+ שורה חדשה</button>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="tab-content" data-tab="settings">
+            <div class="panel">
+                <h2>הגדרות חיבור</h2>
+                <div class="field">
+                    <label>מאגר GitHub</label>
+                    <input type="text" id="set-owner" readonly>
+                </div>
+                <div class="field">
+                    <label>GitHub Token</label>
+                    <input type="password" id="set-token" placeholder="החלפת טוקן — השאירו ריק לשמירת הקיים">
+                </div>
+                <button class="btn" id="save-token-btn">שמירת טוקן</button>
+            </div>
+            <div class="panel">
+                <h2>מצב אחרון שנשמר</h2>
+                <p class="small">בעת לחיצה על "שמירה ופרסום", הנתונים נשלחים ל־GitHub Action שמאמת את הסיסמה ומבצע commit למאגר.</p>
+                <div id="last-save-status" class="small">אין שמירות בסשן הזה.</div>
+            </div>
+        </div>
     </div>
-    <div class="form-group">
-        <label for="announcementsSheetUrl">קישור לקובץ "מודעות" (CSV שפורסם):</label>
-        <input type="text" id="announcementsSheetUrl" placeholder="הדבק כאן את הקישור מגוגל שיטס">
-    </div>
-</fieldset>
-        
-        <button type="button" id="generate-btn">צור קוד הגדרות</button>
-    </form>
+</div>
 
-    <textarea id="output-code" readonly></textarea>
+<div class="status-bar" id="status-bar"></div>
 
-    <script src="config.js"></script>
-    <script src="admin.js"></script>
+<script src="js/github.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>

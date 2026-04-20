@@ -1,0 +1,106 @@
+name: admin-save
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: 'JSON payload { files: { path: object } }'
+        required: true
+      token:
+        description: 'HMAC-SHA256(payload, ADMIN_PASSWORD) — hex'
+        required: true
+
+# We need permission to push back to the repo.
+permissions:
+  contents: write
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      # Mask inputs immediately to reduce leakage in subsequent logs.
+      - name: Mask inputs
+        run: |
+          echo "::add-mask::${{ inputs.token }}"
+          echo "::add-mask::${{ inputs.payload }}"
+
+      - name: Check ADMIN_PASSWORD is set
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          if [ -z "$ADMIN_PASSWORD" ]; then
+            echo "::error::Secret ADMIN_PASSWORD is not set on this repository. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Verify HMAC
+        env:
+          PAYLOAD: ${{ inputs.payload }}
+          CLIENT_TOKEN: ${{ inputs.token }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          EXPECTED=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$ADMIN_PASSWORD" -hex | awk '{print $2}')
+          echo "::add-mask::$EXPECTED"
+          if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$CLIENT_TOKEN" ]; then
+            echo "::error::Authentication failed — wrong password or tampered payload."
+            exit 1
+          fi
+          echo "Auth ok."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Write files
+        env:
+          PAYLOAD: ${{ inputs.payload }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const payload = JSON.parse(process.env.PAYLOAD);
+          if (!payload || typeof payload !== 'object' || !payload.files) {
+            console.error('Payload must have a "files" object');
+            process.exit(1);
+          }
+          const ALLOWED = new Set([
+            'data/config.json',
+            'data/rooms.json',
+            'data/memorial.json',
+            'data/announcements.json',
+            'data/special-times.json',
+          ]);
+          let changed = 0;
+          for (const [p, content] of Object.entries(payload.files)) {
+            if (!ALLOWED.has(p)) {
+              console.error('Refusing to write disallowed path:', p);
+              process.exit(1);
+            }
+            fs.mkdirSync(path.dirname(p), { recursive: true });
+            const serialized = JSON.stringify(content, null, 2) + '\n';
+            let prev = null;
+            try { prev = fs.readFileSync(p, 'utf8'); } catch {}
+            if (prev !== serialized) {
+              fs.writeFileSync(p, serialized);
+              changed++;
+              console.log('Wrote', p);
+            } else {
+              console.log('Unchanged', p);
+            }
+          }
+          console.log(`Changed: ${changed}`);
+          NODE
+
+      - name: Commit and push
+        run: |
+          git config user.name "smart-zmanim-bot"
+          git config user.email "smart-zmanim-bot@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "admin: update data [skip ci]"
+          git push
