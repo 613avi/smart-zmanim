@@ -673,5 +673,16 @@
     // Poll for new commits every 90s (within unauthenticated GitHub API rate limit of 60/hr).
     checkForUpdates();
     setInterval(checkForUpdates, 90_000);
+
+    // Listen for design preview updates from admin page
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'PREVIEW_DESIGN') {
+        if (!state.config) state.config = {};
+        if (!state.config.design) state.config.design = {};
+        if (event.data.theme) state.config.design.theme = event.data.theme;
+        if (event.data.layout) state.config.design.layout = event.data.layout;
+        applyDesign();
+      }
+    });
   });
 })();

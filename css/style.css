@@ -669,3 +669,35 @@ body[data-theme="blue"] .display-body {
 #display-root[data-layout="horizontal"] .zmanim-card { grid-area: zmanim; }
 #display-root[data-layout="horizontal"] .tefillot-card { grid-area: tefillot; }
 #display-root[data-layout="horizontal"] .memorial-card { grid-area: memorial; }
+
+/* Wood theme */
+html[data-theme="wood"], body[data-theme="wood"] {
+    --bg: #4b3017;
+    --bg-card: rgba(0, 0, 0, 0.4);
+    --bg-card-hover: rgba(0, 0, 0, 0.5);
+    --text: #fdf5e6;
+    --text-dim: #deb887;
+    --accent: #ffd700;
+    --accent-2: #ff8c00;
+    --border: rgba(255, 215, 0, 0.2);
+}
+
+body[data-theme="wood"] .display-body {
+    background: radial-gradient(ellipse at center, #6e4624 0%, var(--bg) 100%);
+}
+
+/* Marble theme */
+html[data-theme="marble"], body[data-theme="marble"] {
+    --bg: #e8e8e8;
+    --bg-card: rgba(255, 255, 255, 0.7);
+    --bg-card-hover: rgba(255, 255, 255, 0.9);
+    --text: #2f4f4f;
+    --text-dim: #696969;
+    --accent: #8b0000;
+    --accent-2: #000080;
+    --border: rgba(139, 0, 0, 0.3);
+}
+
+body[data-theme="marble"] .display-body {
+    background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
+}

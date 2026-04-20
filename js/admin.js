@@ -222,16 +222,35 @@
     qs('#g-geocode').addEventListener('click', geocodeAddress);
 
     // Design
+    const updatePreview = () => {
+      const iframe = qs('#design-preview');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'PREVIEW_DESIGN',
+          theme: qs('#d-theme')?.value || 'dark',
+          layout: qs('#d-layout')?.value || '3col'
+        }, '*');
+      }
+    };
+
     if (qs('#d-theme')) qs('#d-theme').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.theme = e.target.value;
       markDirty();
+      updatePreview();
     });
     if (qs('#d-layout')) qs('#d-layout').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.layout = e.target.value;
       markDirty();
+      updatePreview();
     });
+
+    // Initial preview setup on load
+    const iframe = qs('#design-preview');
+    if (iframe) {
+        iframe.addEventListener('load', () => updatePreview());
+    }
   }
   async function geocodeAddress() {
     const address = qs('#g-address').value.trim();
