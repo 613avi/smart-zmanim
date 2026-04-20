@@ -48,6 +48,7 @@
       memorial: { entries: [] },
       announcements: { entries: [] },
       specialTimes: { entries: [] },
+      zmanimCalendar: { entries: {} },
     },
     dirty: false,
   };
@@ -107,6 +108,7 @@
     state.data.memorial = await fetchFile('data/memorial.json', { entries: [] });
     state.data.announcements = await fetchFile('data/announcements.json', { entries: [] });
     state.data.specialTimes = await fetchFile('data/special-times.json', { entries: [] });
+    state.data.zmanimCalendar = await fetchFile('data/zmanim-calendar.json', { entries: {} });
     // normalize
     if (!state.data.config.location) state.data.config.location = { ...DEFAULT_CONFIG.location };
     if (!state.data.config.displayedZmanim) state.data.config.displayedZmanim = { ...DEFAULT_CONFIG.displayedZmanim };
@@ -117,6 +119,9 @@
     if (!Array.isArray(state.data.announcements.entries)) state.data.announcements.entries = [];
     if (!Array.isArray(state.data.specialTimes.entries)) state.data.specialTimes.entries = [];
     migrateSpecial();
+    if (!state.data.zmanimCalendar || typeof state.data.zmanimCalendar.entries !== 'object' || Array.isArray(state.data.zmanimCalendar.entries)) {
+      state.data.zmanimCalendar = { entries: {} };
+    }
   }
 
   // ---------- Login ----------
@@ -773,6 +778,9 @@
       markDirty(); renderMemorial();
     });
 
+    // -- Zmanim-calendar CSV --
+    setupZmanimCSV();
+
   }
 
   // ---------- Save ----------
@@ -792,6 +800,7 @@
         'data/memorial.json': state.data.memorial,
         'data/announcements.json': state.data.announcements,
         'data/special-times.json': state.data.specialTimes,
+        'data/zmanim-calendar.json': state.data.zmanimCalendar,
       },
     };
 
@@ -824,6 +833,165 @@
     }
   }
 
+  // ---------- Zmanim calendar CSV ----------
+  const ZMANIM_CSV_KEYS = [
+    'alotHaShachar','misheyakir','sunrise',
+    'sofZmanShmaMGA','sofZmanShma',
+    'sofZmanTfillaMGA','sofZmanTfilla',
+    'chatzot','minchaGedola','minchaKetana','plagHaMincha',
+    'sunset','tzeit',
+  ];
+
+  function updateZmCsvCount() {
+    const n = Object.keys(state.data.zmanimCalendar.entries || {}).length;
+    const el = qs('#zm-csv-count');
+    if (el) el.textContent = n ? `${n} תאריכים עם דריסות` : 'אין תאריכים בלוח השנתי';
+  }
+
+  function parseZmanimCsv(text) {
+    const rows = parseCSV(text);
+    if (!rows.length) return { entries: {}, errors: ['הקובץ ריק או לא תקין'] };
+    const sample = rows[0];
+    const headers = Object.keys(sample);
+    const dateHeader = headers.find(h => /^(date|תאריך)$/i.test(h.trim()));
+    if (!dateHeader) return { entries: {}, errors: ['חסר שדה "date" או "תאריך" בשורת הכותרת'] };
+
+    const validKeys = headers.filter(h => ZMANIM_CSV_KEYS.includes(h.trim()));
+    const unknown = headers.filter(h => h !== dateHeader && h.trim() && !ZMANIM_CSV_KEYS.includes(h.trim()));
+    const errors = [];
+    if (unknown.length) errors.push(`עמודות לא מוכרות: ${unknown.join(', ')}`);
+
+    const entries = {};
+    for (const row of rows) {
+      const date = String(row[dateHeader] || '').trim();
+      if (!date) continue;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        errors.push(`תאריך לא תקני: ${date}`);
+        continue;
+      }
+      const override = {};
+      for (const k of validKeys) {
+        const v = String(row[k] || '').trim();
+        if (!v) continue;
+        if (!/^\d{1,2}:\d{2}$/.test(v)) {
+          errors.push(`שעה לא תקנית בעמודה ${k} בתאריך ${date}: ${v}`);
+          continue;
+        }
+        const [hh, mm] = v.split(':');
+        override[k.trim()] = `${hh.padStart(2,'0')}:${mm.padStart(2,'0')}`;
+      }
+      if (Object.keys(override).length) entries[date] = override;
+    }
+    return { entries, errors };
+  }
+
+  function buildZmanimCsv(entries) {
+    const dates = Object.keys(entries).sort();
+    const header = ['date', ...ZMANIM_CSV_KEYS];
+    const esc = (v) => {
+      v = v == null ? '' : String(v);
+      if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+      return v;
+    };
+    const lines = [header.map(esc).join(',')];
+    for (const d of dates) {
+      const row = [d, ...ZMANIM_CSV_KEYS.map(k => entries[d][k] || '')];
+      lines.push(row.map(esc).join(','));
+    }
+    return lines.join('\n');
+  }
+
+  function buildZmanimSample() {
+    const header = ['date', ...ZMANIM_CSV_KEYS];
+    const lines = [header.join(',')];
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // midnight local
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      lines.push([iso, ...ZMANIM_CSV_KEYS.map(() => '')].join(','));
+    }
+    return lines.join('\n');
+  }
+
+  function setupZmanimCSV() {
+    const fileInp = qs('#zm-csv-file');
+    const doImport = async (file, mode) => {
+      if (!file) return;
+      const text = await file.text();
+      const { entries, errors } = parseZmanimCsv(text);
+      const count = Object.keys(entries).length;
+      if (errors.length && !count) {
+        alert('כשל בטעינה:\n' + errors.slice(0, 10).join('\n'));
+        return;
+      }
+      if (!count) { status('לא זוהו דריסות בקובץ', 'error'); return; }
+
+      const msg = mode === 'replace'
+        ? `להחליף את הלוח השנתי ב־${count} תאריכים חדשים (המחיקה היא מקומית עד שתלחצו שמירה)?`
+        : `למזג ${count} תאריכים חדשים עם ${Object.keys(state.data.zmanimCalendar.entries).length} הקיימים?`;
+      if (!confirm(msg)) return;
+
+      if (mode === 'replace') state.data.zmanimCalendar.entries = {};
+      Object.assign(state.data.zmanimCalendar.entries, entries);
+
+      if (errors.length) {
+        status(`נטען עם ${errors.length} אזהרות`, 'error');
+        console.warn('Zmanim CSV warnings:', errors);
+      } else {
+        status(`נטענו ${count} תאריכים — לחצו "שמירה ופרסום"`, 'success');
+      }
+      markDirty();
+      updateZmCsvCount();
+    };
+
+    fileInp.addEventListener('change', (e) => {
+      doImport(e.target.files[0], 'merge');
+      e.target.value = ''; // allow re-selecting same file
+    });
+
+    qs('#zm-csv-replace').addEventListener('click', () => {
+      const f = fileInp.files && fileInp.files[0];
+      if (!f) {
+        // Trigger file picker first, then replace
+        fileInp.addEventListener('change', function once(e) {
+          fileInp.removeEventListener('change', once);
+          doImport(e.target.files[0], 'replace');
+          e.target.value = '';
+        }, { once: true });
+        fileInp.click();
+        return;
+      }
+      doImport(f, 'replace');
+    });
+
+    qs('#zm-csv-sample').addEventListener('click', () => {
+      download('zmanim-calendar-template.csv', buildZmanimSample());
+    });
+
+    qs('#zm-csv-download').addEventListener('click', () => {
+      const entries = state.data.zmanimCalendar.entries || {};
+      if (!Object.keys(entries).length) {
+        status('אין נתונים להורדה', 'error');
+        return;
+      }
+      download('zmanim-calendar.csv', buildZmanimCsv(entries));
+    });
+
+    qs('#zm-csv-clear').addEventListener('click', () => {
+      const n = Object.keys(state.data.zmanimCalendar.entries).length;
+      if (!n) { status('הלוח השנתי כבר ריק'); return; }
+      if (!confirm(`למחוק את כל ${n} התאריכים בלוח השנתי?`)) return;
+      state.data.zmanimCalendar.entries = {};
+      markDirty();
+      updateZmCsvCount();
+      status('הלוח השנתי נוקה — לחצו "שמירה ופרסום"');
+    });
+
+    updateZmCsvCount();
+  }
+
   // ---------- Render all ----------
   function renderAll() {
     renderGeneral();
@@ -832,6 +1000,7 @@
     renderMemorial();
     renderAnnouncements();
     renderSpecial();
+    updateZmCsvCount();
   }
 
   // ---------- Boot ----------

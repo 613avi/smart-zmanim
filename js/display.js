@@ -32,6 +32,7 @@
     memorial: [],
     announcements: [],
     specialEvents: [],
+    zmanimCalendar: {}, // { "YYYY-MM-DD": { key: "HH:MM" } }
   };
 
   // ---------- helpers ----------
@@ -121,12 +122,13 @@
   }
 
   async function loadData() {
-    const [config, rooms, memorial, announcements, specialTimes] = await Promise.all([
+    const [config, rooms, memorial, announcements, specialTimes, zmanimCal] = await Promise.all([
       fetchJSON('data/config.json').catch(() => null),
       fetchJSON('data/rooms.json').catch(() => ({ rooms: [] })),
       fetchJSON('data/memorial.json').catch(() => ({ entries: [] })),
       fetchJSON('data/announcements.json').catch(() => ({ entries: [] })),
       fetchJSON('data/special-times.json').catch(() => ({ entries: [] })),
+      fetchJSON('data/zmanim-calendar.json').catch(() => ({ entries: {} })),
     ]);
     if (!config) throw new Error('config.json missing');
     state.config = config;
@@ -135,6 +137,7 @@
     state.memorial = memorial.entries || [];
     state.announcements = announcements.entries || [];
     state.specialEvents = migrateSpecialTimes(specialTimes.entries || []);
+    state.zmanimCalendar = (zmanimCal && zmanimCal.entries && typeof zmanimCal.entries === 'object') ? zmanimCal.entries : {};
   }
 
   // ---------- header / omer / parasha ----------
@@ -279,14 +282,23 @@
 
   function computeZmanim() {
     const z = new Zmanim(makeGeo(), new Date());
-    const overrides = state.config.zmanimOverrides || {};
+    const globalOv = state.config.zmanimOverrides || {};
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const perDateOv = (state.zmanimCalendar && state.zmanimCalendar[todayStr]) || {};
     const out = {};
+    const isTime = (v) => typeof v === 'string' && /^\d{1,2}:\d{2}$/.test(v.trim());
+    const padTime = (v) => {
+      const [hh, mm] = v.trim().split(':');
+      return `${hh.padStart(2,'0')}:${mm.padStart(2,'0')}`;
+    };
     for (const def of ZMANIM_DEFS) {
       let time = '', isOverride = false;
-      const ov = overrides[def.key];
-      if (ov && /^\d{1,2}:\d{2}$/.test(String(ov).trim())) {
-        const [hh, mm] = String(ov).trim().split(':');
-        time = `${hh.padStart(2,'0')}:${mm.padStart(2,'0')}`;
+      // priority: per-date → global → computed
+      if (isTime(perDateOv[def.key])) {
+        time = padTime(perDateOv[def.key]);
+        isOverride = true;
+      } else if (isTime(globalOv[def.key])) {
+        time = padTime(globalOv[def.key]);
         isOverride = true;
       } else {
         try {

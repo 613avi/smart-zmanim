@@ -117,12 +117,41 @@
                 <h2>ניהול זמני היום (הלכתיים)</h2>
                 <p class="small">
                     לכל זמן: <strong>סמנו בצ׳ק־בוקס</strong> אם להציג על הלוח.
-                    <strong>שדה הדריסה</strong> מאפשר להזין שעה קבועה (HH:MM) שתדרוס את החישוב האוטומטי —
+                    <strong>שדה הדריסה</strong> מאפשר להזין שעה קבועה (HH:MM) שתדרוס את החישוב האוטומטי לכל יום —
                     שימושי למשל להגדיר "הנץ הנראה" לפי ההר שרואים מהבית כנסת במקום חישוב תיאורטי.
                     השאירו ריק כדי להשתמש בברירת המחדל המחושבת לפי המיקום.
                     <strong>ברירת המחדל</strong> המחושבת היום מוצגת ליד השדה.
                 </p>
                 <div class="zmanim-grid" id="zmanim-grid"></div>
+            </div>
+
+            <div class="panel">
+                <h2>לוח זמנים שנתי (CSV)</h2>
+                <p class="small">
+                    אפשרות להעלות קובץ CSV עם זמני היום <strong>לכל השנה מראש</strong> — לתאריך יחיד או לטווח.
+                    כל שעה שתמלאו תדרוס את החישוב האוטומטי לאותו תאריך בלבד; תאים ריקים נשארים עם ברירת המחדל.
+                    דריסה פר־תאריך קודמת לדריסה הגלובלית שלמעלה.
+                </p>
+                <p class="small">
+                    <strong>פורמט:</strong> שורה ראשונה = כותרות. עמודה ראשונה <code class="inline">date</code> (YYYY-MM-DD),
+                    ואחריה עד 13 עמודות לפי המפתחות הבאים:
+                    <code class="inline">alotHaShachar, misheyakir, sunrise, sofZmanShmaMGA, sofZmanShma,
+                    sofZmanTfillaMGA, sofZmanTfilla, chatzot, minchaGedola, minchaKetana, plagHaMincha, sunset, tzeit</code>.
+                    ערך בכל תא: <code class="inline">HH:MM</code> (24 שעות) או ריק. לא חובה להכניס את כולן —
+                    אפשר להכניס רק את העמודות שרוצים לדרוס (למשל רק <code class="inline">sunrise</code>).
+                </p>
+                <label class="file-drop">
+                    <input type="file" accept=".csv,text/csv" id="zm-csv-file">
+                    <div>גררו לכאן קובץ CSV או לחצו לבחירה</div>
+                    <div class="small">ערכים חדשים <strong>ימוזגו</strong> עם הנתונים הקיימים; תאריכים שלא בקובץ לא ישתנו.</div>
+                </label>
+                <div style="margin-top:0.7rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                    <button class="btn btn-ghost btn-sm" id="zm-csv-sample">הורדת תבנית לשנה הקרובה</button>
+                    <button class="btn btn-ghost btn-sm" id="zm-csv-download">הורדת CSV נוכחי</button>
+                    <button class="btn btn-ghost btn-sm" id="zm-csv-replace">החלפה מלאה (מחיקת קיימים)</button>
+                    <button class="btn btn-danger btn-sm" id="zm-csv-clear">ניקוי הלוח השנתי</button>
+                    <span class="small" id="zm-csv-count" style="margin-inline-start:auto;"></span>
+                </div>
             </div>
         </div>
 

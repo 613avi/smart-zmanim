@@ -71,6 +71,7 @@ jobs:
             'data/memorial.json',
             'data/announcements.json',
             'data/special-times.json',
+            'data/zmanim-calendar.json',
           ]);
           let changed = 0;
           for (const [p, content] of Object.entries(payload.files)) {
