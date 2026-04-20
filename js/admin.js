@@ -6,10 +6,37 @@
   const DEFAULT_CONFIG = {
     synagogueName: 'בית הכנסת',
     location: { address: '', latitude: 31.778, longitude: 35.235, timezone: 'Asia/Jerusalem', candleLightingMinutes: 18 },
-    displayedZmanim: { alotHaShachar:true, misheyakir:false, sunrise:true, sofZmanShma:true, sofZmanTfilla:true, chatzot:true, minchaGedola:true, minchaKetana:false, plagHaMincha:false, sunset:true, tzeit:true },
+    displayedZmanim: {
+      alotHaShachar: true, misheyakir: false, sunrise: true,
+      sofZmanShmaMGA: true, sofZmanShma: true,
+      sofZmanTfillaMGA: true, sofZmanTfilla: true,
+      chatzot: true, minchaGedola: true, minchaKetana: false,
+      plagHaMincha: false, sunset: true, tzeit: true,
+    },
+    zmanimOverrides: {},
     theme: { accent: '#d4af37', background: '#0e1320' },
     rotation: { enabled: false, intervalSeconds: 20 },
   };
+
+  // ---- data normalization ----
+  const asArr = (v) => Array.isArray(v) ? v.filter(x => x !== '' && x != null) : (v ? [v] : []);
+  function normalizeRoom(room) {
+    const wk = room.weekday || {};
+    const sh = room.shabbat || {};
+    room.weekday = {
+      shacharit: [...asArr(wk.shacharit), ...asArr(wk.shacharit2)].map(String),
+      mincha:    asArr(wk.mincha).map(String),
+      arvit:     asArr(wk.arvit).map(String),
+    };
+    room.shabbat = {
+      kabbalat:            asArr(sh.kabbalat).map(String),
+      minchaErevOffsets:   asArr(sh.minchaErevOffsets ?? sh.minchaErevOffset).map(Number).filter(n => !isNaN(n)),
+      shacharit:           asArr(sh.shacharit).map(String),
+      mincha:              asArr(sh.mincha).map(String),
+      arvitMotzashOffsets: asArr(sh.arvitMotzashOffsets ?? sh.arvitMotzashOffset).map(Number).filter(n => !isNaN(n)),
+    };
+    return room;
+  }
 
   const state = {
     ownerRepo: '',
@@ -81,9 +108,11 @@
     state.data.announcements = await fetchFile('data/announcements.json', { entries: [] });
     state.data.specialTimes = await fetchFile('data/special-times.json', { entries: [] });
     // normalize
-    if (!state.data.config.location) state.data.config.location = DEFAULT_CONFIG.location;
-    if (!state.data.config.displayedZmanim) state.data.config.displayedZmanim = DEFAULT_CONFIG.displayedZmanim;
+    if (!state.data.config.location) state.data.config.location = { ...DEFAULT_CONFIG.location };
+    if (!state.data.config.displayedZmanim) state.data.config.displayedZmanim = { ...DEFAULT_CONFIG.displayedZmanim };
+    if (!state.data.config.zmanimOverrides) state.data.config.zmanimOverrides = {};
     if (!Array.isArray(state.data.rooms.rooms)) state.data.rooms.rooms = [];
+    state.data.rooms.rooms = state.data.rooms.rooms.map(normalizeRoom);
     if (!Array.isArray(state.data.memorial.entries)) state.data.memorial.entries = [];
     if (!Array.isArray(state.data.announcements.entries)) state.data.announcements.entries = [];
     if (!Array.isArray(state.data.specialTimes.entries)) state.data.specialTimes.entries = [];
@@ -208,35 +237,49 @@
 
   // ---------- Zmanim ----------
   const ZMANIM_KEYS = [
-    ['alotHaShachar', 'עלות השחר'],
-    ['misheyakir', 'משיכיר'],
-    ['sunrise', 'הנץ החמה'],
-    ['sofZmanShma', 'סוף זמן ק״ש'],
-    ['sofZmanTfilla', 'סוף זמן תפילה'],
-    ['chatzot', 'חצות היום'],
-    ['minchaGedola', 'מנחה גדולה'],
-    ['minchaKetana', 'מנחה קטנה'],
-    ['plagHaMincha', 'פלג המנחה'],
-    ['sunset', 'שקיעת החמה'],
-    ['tzeit', 'צאת הכוכבים'],
+    ['alotHaShachar',    'עלות השחר'],
+    ['misheyakir',       'משיכיר'],
+    ['sunrise',          'הנץ החמה'],
+    ['sofZmanShmaMGA',   'סוף זמן ק״ש (מג״א)'],
+    ['sofZmanShma',      'סוף זמן ק״ש (גר״א)'],
+    ['sofZmanTfillaMGA', 'סוף זמן תפילה (מג״א)'],
+    ['sofZmanTfilla',    'סוף זמן תפילה (גר״א)'],
+    ['chatzot',          'חצות היום'],
+    ['minchaGedola',     'מנחה גדולה'],
+    ['minchaKetana',     'מנחה קטנה'],
+    ['plagHaMincha',     'פלג המנחה'],
+    ['sunset',           'שקיעת החמה'],
+    ['tzeit',            'צאת הכוכבים'],
   ];
   function renderZmanim() {
     const grid = qs('#zmanim-grid');
     grid.innerHTML = '';
     const displayed = state.data.config.displayedZmanim || {};
+    const overrides = state.data.config.zmanimOverrides || {};
     for (const [key, label] of ZMANIM_KEYS) {
-      const checked = !!displayed[key];
-      const lbl = el('label', {},
-        el('input', { type: 'checkbox', ...(checked ? { checked: '' } : {}) }),
-        label
-      );
-      const input = lbl.querySelector('input');
-      input.checked = checked;
-      input.addEventListener('change', () => {
-        state.data.config.displayedZmanim[key] = input.checked;
+      const row = el('div', { class: 'zmanim-row' });
+      const cb = el('input', { type: 'checkbox' });
+      cb.checked = !!displayed[key];
+      cb.addEventListener('change', () => {
+        state.data.config.displayedZmanim[key] = cb.checked;
         markDirty();
       });
-      grid.appendChild(lbl);
+      const ov = el('input', { type: 'text', placeholder: 'חישוב אוטומטי', maxlength: '5' });
+      ov.value = overrides[key] || '';
+      ov.style.width = '6rem';
+      ov.style.direction = 'ltr';
+      ov.style.textAlign = 'center';
+      ov.addEventListener('input', () => {
+        const v = ov.value.trim();
+        if (v) state.data.config.zmanimOverrides[key] = v;
+        else delete state.data.config.zmanimOverrides[key];
+        markDirty();
+      });
+      const lbl = el('label', {}, cb, el('span', { class: 'zm-label' }, label));
+      row.appendChild(lbl);
+      row.appendChild(el('span', { class: 'zm-ov-label small' }, 'דריסה:'));
+      row.appendChild(ov);
+      grid.appendChild(row);
     }
   }
 
@@ -273,45 +316,65 @@
     };
 
     body.appendChild(el('div', { class: 'row' },
-      fieldRow('מזהה (id)', mkInput('text', room.id, v => room.id = v.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-'))),
-      fieldRow('שם להצגה', mkInput('text', room.name, v => room.name = v)),
+      fieldRow('מזהה (id)', mkInput('text', room.id, v => { room.id = v.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-'); })),
+      fieldRow('שם להצגה', mkInput('text', room.name, v => { room.name = v; renderRooms(); })),
     ));
+
+    // Multi-minyan builder
+    const buildList = (title, arr, opts = {}) => {
+      const wrap = el('div', { class: 'minyan-list' });
+      wrap.appendChild(el('label', {}, title));
+      const rows = el('div', { class: 'minyan-rows' });
+      const draw = () => {
+        rows.innerHTML = '';
+        arr.forEach((val, idx) => {
+          const inp = document.createElement('input');
+          inp.type = opts.numeric ? 'number' : 'text';
+          inp.placeholder = opts.placeholder || 'HH:MM';
+          inp.value = val ?? '';
+          inp.addEventListener('input', (e) => {
+            arr[idx] = opts.numeric ? Number(e.target.value) : e.target.value;
+            markDirty();
+          });
+          const rm = el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => {
+            arr.splice(idx, 1); markDirty(); draw();
+          }}, '×');
+          rows.appendChild(el('div', { class: 'minyan-row' }, inp, rm));
+        });
+        const add = el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => {
+          arr.push(opts.numeric ? 0 : '');
+          markDirty(); draw();
+        }}, '+ מניין');
+        rows.appendChild(add);
+      };
+      draw();
+      wrap.appendChild(rows);
+      if (opts.hint) wrap.appendChild(el('div', { class: 'small' }, opts.hint));
+      return wrap;
+    };
 
     body.appendChild(el('h3', {}, 'יום חול'));
     body.appendChild(el('div', { class: 'row-3' },
-      fieldRow('שחרית', mkInput('text', room.weekday?.shacharit, v => setNested(room, 'weekday.shacharit', v))),
-      fieldRow('שחרית ב׳', mkInput('text', room.weekday?.shacharit2, v => setNested(room, 'weekday.shacharit2', v))),
-      fieldRow('מנחה', mkInput('text', room.weekday?.mincha, v => setNested(room, 'weekday.mincha', v))),
-    ));
-    body.appendChild(el('div', { class: 'row' },
-      fieldRow('ערבית', mkInput('text', room.weekday?.arvit, v => setNested(room, 'weekday.arvit', v))),
-      el('div'),
+      buildList('שחרית', room.weekday.shacharit),
+      buildList('מנחה',   room.weekday.mincha),
+      buildList('ערבית',  room.weekday.arvit),
     ));
 
     body.appendChild(el('h3', {}, 'שבת'));
     body.appendChild(el('div', { class: 'row-3' },
-      fieldRow('קבלת שבת (אופציונלי)', mkInput('text', room.shabbat?.kabbalat, v => setNested(room, 'shabbat.kabbalat', v))),
-      fieldRow('מנחה ערב שבת — דקות מהדלקת נרות', mkInput('number', room.shabbat?.minchaErevOffset, v => setNested(room, 'shabbat.minchaErevOffset', Number(v)))),
-      fieldRow('שחרית', mkInput('text', room.shabbat?.shacharit, v => setNested(room, 'shabbat.shacharit', v))),
+      buildList('קבלת שבת', room.shabbat.kabbalat, { hint: 'שעה קבועה (אופציונלי)' }),
+      buildList('מנחה ערב שבת (דקות מהדלקת נרות)', room.shabbat.minchaErevOffsets, { numeric: true, placeholder: '-15', hint: 'מספר שלילי = לפני הדלקת נרות' }),
+      buildList('שחרית שבת', room.shabbat.shacharit),
     ));
     body.appendChild(el('div', { class: 'row-3' },
-      fieldRow('מנחה', mkInput('text', room.shabbat?.mincha, v => setNested(room, 'shabbat.mincha', v))),
-      fieldRow('ערבית מוצ״ש — דקות מצאה״כ', mkInput('number', room.shabbat?.arvitMotzashOffset, v => setNested(room, 'shabbat.arvitMotzashOffset', Number(v)))),
+      buildList('מנחה שבת',  room.shabbat.mincha),
+      buildList('ערבית מוצ״ש (דקות אחרי צאה״כ)', room.shabbat.arvitMotzashOffsets, { numeric: true, placeholder: '30' }),
       el('div'),
     ));
 
     card.appendChild(head);
     card.appendChild(body);
     return card;
-  }
-  function setNested(obj, path, value) {
-    const parts = path.split('.');
-    let cur = obj;
-    for (let i = 0; i < parts.length - 1; i++) {
-      if (!cur[parts[i]]) cur[parts[i]] = {};
-      cur = cur[parts[i]];
-    }
-    cur[parts[parts.length - 1]] = value;
   }
 
   // ---------- Memorial ----------
@@ -618,13 +681,11 @@
 
     qs('#add-room-btn').addEventListener('click', () => {
       const next = state.data.rooms.rooms.length + 1;
-      state.data.rooms.rooms.push({
+      const room = normalizeRoom({
         id: `room-${next}`,
         name: `חדר ${next}`,
-        weekday: { shacharit: '', shacharit2: '', mincha: '', arvit: '' },
-        shabbat: { minchaErevOffset: -15, kabbalat: '', shacharit: '', mincha: '', arvitMotzashOffset: 30 },
-        notes: '',
       });
+      state.data.rooms.rooms.push(room);
       markDirty(); renderRooms();
     });
 

@@ -153,12 +153,60 @@ body { min-height: 100vh; }
     margin-bottom: 1.2rem;
 }
 .tefillot-card .room-block:last-child { margin-bottom: 0; }
-.tefillot-card .room-block h3 {
-    margin: 0 0 0.5rem;
+.tefillot-card .room-block h3,
+.tefillot-card .prayer-block h3 {
+    margin: 0 0 0.4rem;
     font-size: clamp(1.1rem, 1.5vw, 1.7rem);
     color: var(--accent-2);
     font-weight: 600;
     font-family: 'Frank Ruhl Libre', serif;
+}
+.tefillot-card .prayer-block {
+    margin-bottom: 0.9rem;
+}
+.tefillot-card .prayer-block:last-child { margin-bottom: 0; }
+.tefillot-card .prayer-block td.ptime {
+    width: 30%;
+    font-weight: 700;
+    color: var(--accent);
+    direction: ltr;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+}
+.tefillot-card .prayer-block td.proom {
+    color: var(--text);
+}
+.tefillot-card .shabbat-shared {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem 0.8rem;
+    background: rgba(212,175,55,0.08);
+    border-radius: 8px;
+    font-size: clamp(0.95rem, 1.3vw, 1.4rem);
+}
+.tefillot-card .shabbat-shared > div {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+.tefillot-card .shabbat-shared b {
+    color: var(--accent);
+    direction: ltr;
+    font-variant-numeric: tabular-nums;
+}
+
+.zmanim-card td .ov {
+    color: var(--accent);
+    margin-inline-start: 0.2rem;
+}
+
+.display-header .sub.omer {
+    font-size: clamp(0.85rem, 1.1vw, 1.2rem);
+    color: var(--accent);
+    margin-top: 0.2rem;
+    font-weight: 600;
 }
 
 #memorial-list {
@@ -402,23 +450,59 @@ table.data-table .col-actions { width: 80px; text-align: center; }
 
 .zmanim-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 0.5rem;
 }
-.zmanim-grid label {
-    display: flex;
-    align-items: center;
+.zmanim-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
     gap: 0.5rem;
+    align-items: center;
     padding: 0.5rem 0.75rem;
     border: 1px solid #e6e9f0;
     border-radius: 6px;
     background: #fafbfd;
+}
+.zmanim-row label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     cursor: pointer;
     font-weight: 500;
 }
-.zmanim-grid label:has(input:checked) {
+.zmanim-row input[type="checkbox"]:checked ~ .zm-label { color: #0e1320; }
+.zmanim-row:has(input[type="checkbox"]:checked) {
     border-color: var(--accent);
     background: #fff8e1;
+}
+.zmanim-row .zm-ov-label { white-space: nowrap; }
+
+.minyan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.minyan-list > label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.minyan-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.minyan-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem;
+    align-items: center;
+}
+.minyan-row input {
+    width: 100%;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #d0d4dd;
+    border-radius: 4px;
+    font: inherit;
 }
 
 .empty-state {
