@@ -148,4 +148,11 @@ python3 -m http.server 8000
 ---
 
 ## רישיון
-MIT
+
+הפרויקט מופץ תחת רישיון **CC BY-NC-SA 4.0** — Creative Commons Attribution-NonCommercial-ShareAlike.
+
+- **מותר**: להשתמש, לשכפל, לערוך ולהפיץ — לכל שימוש **לא־מסחרי** (בית כנסת, קהילה, אישי).
+- **חובה**: לתת קרדיט ליוצרים המקוריים, ולהפיץ נגזרות תחת אותו רישיון.
+- **אסור**: שימוש מסחרי מכל סוג — כולל שילוב **חלקים** מהקוד במוצר בתשלום, הצעת הפרויקט כשירות בתשלום, או מכירה.
+
+פרטים מלאים: [LICENSE](LICENSE) · [creativecommons.org/licenses/by-nc-sa/4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).

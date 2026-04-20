@@ -600,11 +600,54 @@
     } catch (e) { console.error('lightRefresh failed', e); }
   }
 
+  // ---------- auto-reload on new commit ----------
+  function detectOwnerRepo() {
+    const host = location.hostname;
+    const match = host.match(/^([^.]+)\.github\.io$/);
+    if (match) {
+      const parts = location.pathname.split('/').filter(Boolean);
+      if (parts[0]) return `${match[1]}/${parts[0]}`;
+    }
+    return '';
+  }
+
+  let _bootSha = null;
+  let _reloadArmed = false;
+
+  async function fetchLatestSha() {
+    const ownerRepo = detectOwnerRepo();
+    if (!ownerRepo) return null;
+    const [owner, repo] = ownerRepo.split('/');
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/commits/main?per_page=1`,
+        { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' }
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data && data.sha ? data.sha : null;
+    } catch { return null; }
+  }
+
+  async function checkForUpdates() {
+    const sha = await fetchLatestSha();
+    if (!sha) return;
+    if (_bootSha == null) { _bootSha = sha; return; }
+    if (sha !== _bootSha && !_reloadArmed) {
+      _reloadArmed = true;
+      // Wait ~45s for Pages CDN to publish the new commit before reloading.
+      setTimeout(() => location.reload(), 45_000);
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     await refreshAll();
     renderClock();
     setInterval(renderClock, 1000);
     setInterval(lightRefresh, 60 * 1000);
     setInterval(refreshAll, 5 * 60 * 1000);
+    // Poll for new commits every 90s (within unauthenticated GitHub API rate limit of 60/hr).
+    checkForUpdates();
+    setInterval(checkForUpdates, 90_000);
   });
 })();
