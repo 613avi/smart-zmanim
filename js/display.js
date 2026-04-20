@@ -1,14 +1,18 @@
 // Smart Zmanim - display logic
-// Loads data/*.json from the repo, renders a kiosk-style synagogue board.
+// Loads data/*.json, renders a kiosk-style synagogue board (always all-rooms).
 
 (() => {
-  const { HDate, GeoLocation, Zmanim, HebrewCalendar, flags, Locale } = window.hebcal;
+  const { HDate, GeoLocation, Zmanim, HebrewCalendar, flags, Locale, gematriya } = window.hebcal;
   const FLAG_PARSHA = (flags && flags.PARSHA_HASHAVUA) || 1024;
   const FLAG_CHAG = (flags && flags.CHAG) || 1;
 
   const hebMonth = (hdate) => {
     try { return Locale.gettext(hdate.getMonthName(), 'he'); }
     catch { return hdate.getMonthName(); }
+  };
+  const hebDay = (n) => {
+    try { return gematriya(Number(n) || 0); }
+    catch { return String(n); }
   };
   const makeGeo = () => {
     const { latitude, longitude, timezone } = state.config.location;
@@ -27,8 +31,7 @@
     rooms: [],
     memorial: [],
     announcements: [],
-    specialTimes: [],
-    activeRoomId: null, // room id, or "all"
+    specialEvents: [],
   };
 
   // ---------- helpers ----------
@@ -38,13 +41,25 @@
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   };
   const parseTime = (s) => {
-    // HH:MM -> minutes-since-midnight
     const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '').trim());
     if (!m) return NaN;
     return Number(m[1]) * 60 + Number(m[2]);
   };
   const addMinutes = (date, mins) => new Date(date.getTime() + mins * 60000);
   const asArr = (v) => Array.isArray(v) ? v.filter(x => x !== '' && x != null) : (v ? [v] : []);
+
+  // Effective Hebrew date: after sunset at current location we're already on the next Hebrew day.
+  function getEffectiveHDate() {
+    const now = new Date();
+    let hd = new HDate(now);
+    if (state.config && state.config.location) {
+      try {
+        const sunset = new Zmanim(makeGeo(), now).sunset();
+        if (sunset && now >= sunset) hd = hd.next();
+      } catch {}
+    }
+    return hd;
+  }
 
   function normalizeRoom(room) {
     const wk = room.weekday || {};
@@ -64,10 +79,44 @@
     return room;
   }
 
+  // Normalize special-times to event-grouped format.
+  function migrateSpecialTimes(arr) {
+    if (!Array.isArray(arr)) return [];
+    if (arr.length === 0) return [];
+    if (arr[0] && (Array.isArray(arr[0].times) || arr[0].name != null || arr[0].dateType)) {
+      // Already events format — ensure shape
+      return arr.map(ev => ({
+        id: ev.id || String(Math.random()).slice(2),
+        name: ev.name || '',
+        dateType: ev.dateType === 'hebrew' ? 'hebrew' : 'gregorian',
+        date: ev.date || '',
+        hebrewDay: ev.hebrewDay || 0,
+        hebrewMonth: ev.hebrewMonth || '',
+        times: Array.isArray(ev.times) ? ev.times : [],
+      }));
+    }
+    // Flat rows (legacy): group by date
+    const groups = new Map();
+    for (const r of arr) {
+      const key = r.date || '';
+      if (!groups.has(key)) groups.set(key, {
+        id: String(Math.random()).slice(2),
+        name: '',
+        dateType: 'gregorian',
+        date: key,
+        hebrewDay: 0,
+        hebrewMonth: '',
+        times: [],
+      });
+      groups.get(key).times.push({ roomId: r.roomId || '', label: r.label || '', time: r.time || '' });
+    }
+    return [...groups.values()];
+  }
+
   async function fetchJSON(path) {
     const url = `${path}?v=${Date.now()}`;
     const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
+    if (!res.ok) throw new Error(`${path}: ${res.status}`);
     return res.json();
   }
 
@@ -85,17 +134,7 @@
     state.rooms = (rooms.rooms || []).map(normalizeRoom);
     state.memorial = memorial.entries || [];
     state.announcements = announcements.entries || [];
-    state.specialTimes = specialTimes.entries || [];
-
-    // active room from URL ?room=
-    const params = new URLSearchParams(location.search);
-    const fromUrl = params.get('room');
-    if (fromUrl === 'all' || (fromUrl && state.rooms.find(r => r.id === fromUrl))) {
-      state.activeRoomId = fromUrl;
-    } else if (state.activeRoomId == null) {
-      // default: all rooms if >1, else the single room
-      state.activeRoomId = state.rooms.length > 1 ? 'all' : (state.rooms[0]?.id || null);
-    }
+    state.specialEvents = migrateSpecialTimes(specialTimes.entries || []);
   }
 
   // ---------- header / omer / parasha ----------
@@ -130,7 +169,7 @@
   function renderHeader() {
     qs('#synagogue-name').textContent = state.config.synagogueName || '';
     const now = new Date();
-    const hdate = new HDate(now);
+    const hdate = getEffectiveHDate();
     qs('#hebrew-date').textContent = hdate.renderGematriya();
     const dow = HEB_DOW[now.getDay()];
     qs('#gregorian-date').textContent = `יום ${dow}, ${now.toLocaleDateString('he-IL', {day:'numeric', month:'long', year:'numeric'})}`;
@@ -176,14 +215,13 @@
   function computeZmanim() {
     const z = new Zmanim(makeGeo(), new Date());
     const overrides = state.config.zmanimOverrides || {};
-    const results = {};
+    const out = {};
     for (const def of ZMANIM_DEFS) {
-      let label = def.label;
-      let time = '';
-      let isOverride = false;
+      let time = '', isOverride = false;
       const ov = overrides[def.key];
       if (ov && /^\d{1,2}:\d{2}$/.test(String(ov).trim())) {
-        time = String(ov).trim().padStart(5, '0');
+        const [hh, mm] = String(ov).trim().split(':');
+        time = `${hh.padStart(2,'0')}:${mm.padStart(2,'0')}`;
         isOverride = true;
       } else {
         try {
@@ -191,9 +229,9 @@
           time = fmtTime(d instanceof Date ? d : new Date(d));
         } catch {}
       }
-      results[def.key] = { label, time, isOverride };
+      out[def.key] = { time, isOverride };
     }
-    return results;
+    return out;
   }
 
   function renderZmanim() {
@@ -210,9 +248,34 @@
       tr.innerHTML = `<td>${def.label}${mark}</td><td>${r.time}</td>`;
       tbody.appendChild(tr);
     }
+    updateAutoScroll(qs('.zmanim-card'));
   }
 
-  // ---------- rooms / tefillot ----------
+  // ---------- auto-scroll for cards that overflow ----------
+  function updateAutoScroll(el) {
+    if (!el) return;
+    clearInterval(el._scrollTimer);
+    el._scrollTimer = null;
+    el._scrollDir = 0;
+    el.scrollTop = 0;
+    // Defer: layout must settle
+    requestAnimationFrame(() => {
+      if (el.scrollHeight - el.clientHeight <= 4) return;
+      el._scrollDir = 1;
+      el._scrollHold = 40; // pause ticks at edges
+      el._scrollTimer = setInterval(() => {
+        if (el._scrollHold > 0) { el._scrollHold--; return; }
+        el.scrollTop += el._scrollDir;
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+          el._scrollDir = -1; el._scrollHold = 40;
+        } else if (el.scrollTop <= 0) {
+          el._scrollDir = 1; el._scrollHold = 40;
+        }
+      }, 50);
+    });
+  }
+
+  // ---------- tefillot (always all-rooms) ----------
   function computeShabbatContext() {
     const geo = makeGeo();
     const now = new Date();
@@ -234,8 +297,6 @@
     return { candle, havdalah };
   }
 
-  // Build one room's rows for today.
-  // Returns [{ label, time, sortKey }]
   function buildWeekdayRows(room) {
     const rows = [];
     for (const t of room.weekday.shacharit) rows.push({ group: 'שחרית', time: t });
@@ -243,36 +304,43 @@
     for (const t of room.weekday.arvit)     rows.push({ group: 'ערבית',  time: t });
     return rows;
   }
-
   function buildShabbatRows(room, ctx) {
     const rows = [];
     for (const t of room.shabbat.kabbalat) rows.push({ group: 'קבלת שבת', time: t });
-    for (const off of room.shabbat.minchaErevOffsets) {
-      rows.push({ group: 'מנחה ערב שבת', time: fmtTime(addMinutes(ctx.candle, off)) });
-    }
+    for (const off of room.shabbat.minchaErevOffsets) rows.push({ group: 'מנחה ערב שבת', time: fmtTime(addMinutes(ctx.candle, off)) });
     for (const t of room.shabbat.shacharit) rows.push({ group: 'שחרית שבת', time: t });
     for (const t of room.shabbat.mincha)    rows.push({ group: 'מנחה שבת',  time: t });
-    for (const off of room.shabbat.arvitMotzashOffsets) {
-      rows.push({ group: 'ערבית מוצ״ש', time: fmtTime(addMinutes(ctx.havdalah, off)) });
-    }
+    for (const off of room.shabbat.arvitMotzashOffsets) rows.push({ group: 'ערבית מוצ״ש', time: fmtTime(addMinutes(ctx.havdalah, off)) });
     return rows;
   }
 
-  function applySpecialOverrides(rows, room) {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const overrides = state.specialTimes.filter(e =>
-      e.date === todayStr && (!e.roomId || e.roomId === room.id || e.roomId === '*')
-    );
-    for (const ov of overrides) {
-      if (!ov.label || !ov.time) continue;
-      // Replace all rows with matching label/group; if none match, append as ad-hoc row
-      const matches = rows.filter(r => r.group === ov.label || r.label === ov.label);
-      if (matches.length) {
-        rows.forEach(r => {
-          if (r.group === ov.label || r.label === ov.label) r.time = ov.time;
-        });
-      } else {
-        rows.push({ group: ov.label, time: ov.time });
+  function eventAppliesToday(ev, hdateToday, gregTodayStr) {
+    if (ev.dateType === 'hebrew') {
+      if (!ev.hebrewDay || !ev.hebrewMonth) return false;
+      const monthHe = hebMonth(hdateToday);
+      const monthEn = hdateToday.getMonthName();
+      const em = String(ev.hebrewMonth).trim();
+      const byName = em === monthHe.trim() || em.toLowerCase() === monthEn.toLowerCase();
+      const byIndex = Number(em) === hdateToday.getMonth();
+      return (byName || byIndex) && Number(ev.hebrewDay) === hdateToday.getDate();
+    }
+    return ev.date === gregTodayStr;
+  }
+
+  function applySpecialEventsToRoom(rows, room) {
+    const hdate = getEffectiveHDate();
+    const gregToday = new Date().toISOString().slice(0, 10);
+    for (const ev of state.specialEvents) {
+      if (!eventAppliesToday(ev, hdate, gregToday)) continue;
+      for (const t of (ev.times || [])) {
+        if (!t.label || !t.time) continue;
+        if (t.roomId && t.roomId !== '*' && t.roomId !== room.id) continue;
+        const matches = rows.filter(r => r.group === t.label);
+        if (matches.length) {
+          rows.forEach(r => { if (r.group === t.label) r.time = t.time; });
+        } else {
+          rows.push({ group: t.label, time: t.time, eventName: ev.name });
+        }
       }
     }
     return rows;
@@ -289,6 +357,13 @@
     return i < 0 ? 99 : i;
   };
 
+  function currentEventName() {
+    const hdate = getEffectiveHDate();
+    const gregToday = new Date().toISOString().slice(0, 10);
+    const match = state.specialEvents.find(ev => eventAppliesToday(ev, hdate, gregToday) && ev.name);
+    return match ? match.name : '';
+  }
+
   function renderTefillot() {
     const container = qs('#tefillot-rooms');
     container.innerHTML = '';
@@ -303,102 +378,48 @@
     const isErevShabbat = dow === 5;
     const shabbatCtx = (isShabbat || isErevShabbat) ? computeShabbatContext() : null;
 
-    qs('#tefillot-title').textContent = isShabbat || isErevShabbat ? 'זמני תפילות שבת' : 'זמני תפילות';
+    let title = isShabbat || isErevShabbat ? 'זמני תפילות שבת' : 'זמני תפילות';
+    const eventName = currentEventName();
+    if (eventName) title = `זמני תפילות — ${eventName}`;
+    qs('#tefillot-title').textContent = title;
 
-    const showAll = state.activeRoomId === 'all' || !state.activeRoomId;
-    const rooms = showAll ? state.rooms : state.rooms.filter(r => r.id === state.activeRoomId);
-
-    if (showAll && state.rooms.length > 1) {
-      // Compute shabbat context shared shown above
-      if (shabbatCtx) {
-        const shared = document.createElement('div');
-        shared.className = 'shabbat-shared';
-        shared.innerHTML = `
-          <div><span>הדלקת נרות</span><b>${fmtTime(shabbatCtx.candle)}</b></div>
-          <div><span>צאת השבת</span><b>${fmtTime(shabbatCtx.havdalah)}</b></div>
-        `;
-        container.appendChild(shared);
-      }
-
-      // Gather minyans across rooms and group by prayer
-      const byGroup = new Map();
-      for (const room of rooms) {
-        const raw = (isShabbat || isErevShabbat) ? buildShabbatRows(room, shabbatCtx) : buildWeekdayRows(room);
-        applySpecialOverrides(raw, room);
-        for (const r of raw) {
-          const list = byGroup.get(r.group) || [];
-          list.push({ ...r, roomName: room.name });
-          byGroup.set(r.group, list);
-        }
-      }
-
-      const groups = [...byGroup.entries()].sort((a, b) => prayerOrderIdx(a[0]) - prayerOrderIdx(b[0]));
-      for (const [group, minyans] of groups) {
-        minyans.sort((a, b) => parseTime(a.time) - parseTime(b.time));
-        const block = document.createElement('div');
-        block.className = 'prayer-block';
-        const rowsHtml = minyans.map(m =>
-          `<tr><td class="ptime">${m.time || '—'}</td><td class="proom">${m.roomName}</td></tr>`
-        ).join('');
-        block.innerHTML = `<h3>${group}</h3><table><tbody>${rowsHtml}</tbody></table>`;
-        container.appendChild(block);
-      }
-      return;
+    // Shared shabbat row at top
+    if (shabbatCtx) {
+      const shared = document.createElement('div');
+      shared.className = 'shabbat-shared';
+      shared.innerHTML = `
+        <div><span>הדלקת נרות</span><b>${fmtTime(shabbatCtx.candle)}</b></div>
+        <div><span>צאת השבת</span><b>${fmtTime(shabbatCtx.havdalah)}</b></div>
+      `;
+      container.appendChild(shared);
     }
 
-    // Single room view
-    for (const room of rooms) {
-      const block = document.createElement('div');
-      block.className = 'room-block';
-      const title = state.rooms.length > 1 ? `<h3>${room.name}</h3>` : '';
+    // Gather minyans by prayer group from every room
+    const byGroup = new Map();
+    for (const room of state.rooms) {
       const raw = (isShabbat || isErevShabbat) ? buildShabbatRows(room, shabbatCtx) : buildWeekdayRows(room);
-      applySpecialOverrides(raw, room);
-
-      // Build "Candle lighting" and "Havdalah" as prefix/suffix for shabbat single-room
-      const extraTop = [];
-      const extraBottom = [];
-      if (shabbatCtx) {
-        extraTop.push({ group: 'הדלקת נרות', time: fmtTime(shabbatCtx.candle) });
-        extraBottom.push({ group: 'צאת השבת', time: fmtTime(shabbatCtx.havdalah) });
+      applySpecialEventsToRoom(raw, room);
+      for (const r of raw) {
+        const list = byGroup.get(r.group) || [];
+        list.push({ ...r, roomName: room.name });
+        byGroup.set(r.group, list);
       }
-      raw.sort((a, b) => {
-        const oa = prayerOrderIdx(a.group), ob = prayerOrderIdx(b.group);
-        if (oa !== ob) return oa - ob;
-        return parseTime(a.time) - parseTime(b.time);
-      });
-      const all = [...extraTop, ...raw, ...extraBottom];
-      const rowsHtml = all.length
-        ? `<table><tbody>${all.map(r =>
-            `<tr><td>${r.group}</td><td>${r.time || '—'}</td></tr>`
-          ).join('')}</tbody></table>`
-        : `<div class="empty-state">אין זמני תפילה</div>`;
-      block.innerHTML = title + rowsHtml;
+    }
+
+    const groups = [...byGroup.entries()].sort((a, b) => prayerOrderIdx(a[0]) - prayerOrderIdx(b[0]));
+    const showRoomCol = state.rooms.length > 1;
+    for (const [group, minyans] of groups) {
+      minyans.sort((a, b) => parseTime(a.time) - parseTime(b.time));
+      const block = document.createElement('div');
+      block.className = 'prayer-block';
+      const rowsHtml = minyans.map(m =>
+        `<tr><td class="ptime">${m.time || '—'}</td>${showRoomCol ? `<td class="proom">${m.roomName}</td>` : ''}</tr>`
+      ).join('');
+      block.innerHTML = `<h3>${group}</h3><table><tbody>${rowsHtml}</tbody></table>`;
       container.appendChild(block);
     }
-  }
 
-  function renderRoomSwitcher() {
-    const container = qs('#room-switcher');
-    container.innerHTML = '';
-    if (state.rooms.length <= 1) return;
-    const mkBtn = (id, label) => {
-      const btn = document.createElement('button');
-      btn.textContent = label;
-      if (id === state.activeRoomId) btn.classList.add('active');
-      btn.addEventListener('click', () => {
-        state.activeRoomId = id;
-        const url = new URL(location.href);
-        url.searchParams.set('room', id);
-        history.replaceState({}, '', url);
-        renderRoomSwitcher();
-        renderTefillot();
-      });
-      return btn;
-    };
-    container.appendChild(mkBtn('all', 'כל החדרים'));
-    for (const room of state.rooms) {
-      container.appendChild(mkBtn(room.id, room.name));
-    }
+    updateAutoScroll(qs('.tefillot-card'));
   }
 
   // ---------- memorial ----------
@@ -417,22 +438,19 @@
     const list = qs('#memorial-list');
     const card = qs('#memorial-card');
     list.innerHTML = '';
-    if (!state.memorial.length) {
-      card.style.display = 'none';
-      return;
-    }
+    if (!state.memorial.length) { card.style.display = 'none'; return; }
     card.style.display = '';
-    const today = new HDate(new Date());
+    const today = getEffectiveHDate();
     const items = [...state.memorial].map(e => ({ ...e, _today: hebrewDateMatches(e, today) }));
     items.sort((a, b) => {
       if (a._today && !b._today) return -1;
       if (!a._today && b._today) return 1;
       return (a.name || '').localeCompare(b.name || '', 'he');
     });
-    for (const entry of items.slice(0, 50)) {
+    for (const entry of items.slice(0, 60)) {
       const li = document.createElement('li');
       const dateStr = entry.hebrewDay && entry.hebrewMonth
-        ? `${entry.hebrewDay} ${entry.hebrewMonth}`
+        ? `${hebDay(entry.hebrewDay)} ${entry.hebrewMonth}`
         : '';
       li.innerHTML = `
         <span class="mem-name${entry._today ? ' mem-today' : ''}">${entry.name || ''}</span>
@@ -440,6 +458,7 @@
       `;
       list.appendChild(li);
     }
+    updateAutoScroll(qs('.memorial-card'));
   }
 
   function renderAnnouncements() {
@@ -451,10 +470,7 @@
       const endOk = !a.endDate || a.endDate >= today;
       return startOk && endOk && a.text;
     });
-    if (!active.length) {
-      container.style.display = 'none';
-      return;
-    }
+    if (!active.length) { container.style.display = 'none'; return; }
     container.style.display = 'block';
     ticker.textContent = active.map(a => a.text).join('   •   ');
   }
@@ -462,7 +478,7 @@
   function renderUpcoming() {
     try {
       const now = new Date();
-      const hdate = new HDate(now);
+      const hdate = getEffectiveHDate();
       const end = new HDate(new Date(now.getTime() + 14 * 86400000));
       const events = HebrewCalendar.calendar({
         start: hdate, end, il: true, locale: 'he',
@@ -473,13 +489,11 @@
     } catch { /* ignore */ }
   }
 
-  // ---------- refresh ----------
   async function refreshAll() {
     try {
       await loadData();
       renderHeader();
       renderZmanim();
-      renderRoomSwitcher();
       renderTefillot();
       renderMemorial();
       renderAnnouncements();

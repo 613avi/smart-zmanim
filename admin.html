@@ -174,32 +174,13 @@
             </div>
         </div>
 
-        <!-- Special times -->
+        <!-- Special times (events) -->
         <div class="tab-content" data-tab="special">
             <div class="panel">
-                <h2>זמני תפילה מיוחדים</h2>
-                <p class="small">דריסת זמני תפילה בתאריך לועזי ספציפי, למשל חגים, ימי זיכרון, אירועים מיוחדים.</p>
-
-                <h3>העלאת CSV</h3>
-                <label class="file-drop">
-                    <input type="file" accept=".csv,text/csv" id="sp-file">
-                    <div>CSV עם עמודות: תאריך (YYYY-MM-DD), חדר (אופציונלי, מזהה), תפילה, שעה</div>
-                </label>
-
-                <h3>עריכה</h3>
-                <table class="data-table" id="sp-table">
-                    <thead>
-                        <tr>
-                            <th style="width:140px;">תאריך</th>
-                            <th style="width:160px;">חדר</th>
-                            <th>שם התפילה</th>
-                            <th style="width:100px;">שעה</th>
-                            <th class="col-actions"></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <button class="btn btn-ghost btn-sm" id="add-sp-btn" style="margin-top:0.5rem;">+ שורה חדשה</button>
+                <h2>אירועים וזמני תפילה מיוחדים</h2>
+                <p class="small">לכל אירוע (חג, תאריך מיוחד, יום זיכרון) אפשר להגדיר תאריך עברי (משתנה בשקיעה) או לועזי, ולהוסיף מספר זמני תפילה. אפשרות "מילוי מהיר" עוזרת לחגים נפוצים.</p>
+                <div id="sp-list"></div>
+                <button class="btn btn-ghost" id="add-sp-btn">+ אירוע חדש</button>
             </div>
         </div>
 

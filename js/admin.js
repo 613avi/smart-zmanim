@@ -116,6 +116,7 @@
     if (!Array.isArray(state.data.memorial.entries)) state.data.memorial.entries = [];
     if (!Array.isArray(state.data.announcements.entries)) state.data.announcements.entries = [];
     if (!Array.isArray(state.data.specialTimes.entries)) state.data.specialTimes.entries = [];
+    migrateSpecial();
   }
 
   // ---------- Login ----------
@@ -451,45 +452,191 @@
     return tr;
   }
 
-  // ---------- Special times ----------
+  // ---------- Special events ----------
+  const HOLIDAY_PRESETS = [
+    { name: 'ראש השנה א׳',    day: 1,  month: 'תשרי' },
+    { name: 'ראש השנה ב׳',    day: 2,  month: 'תשרי' },
+    { name: 'יום הכיפורים',    day: 10, month: 'תשרי' },
+    { name: 'סוכות א׳',        day: 15, month: 'תשרי' },
+    { name: 'שמיני עצרת',      day: 22, month: 'תשרי' },
+    { name: 'שמחת תורה',       day: 23, month: 'תשרי' },
+    { name: 'חנוכה א׳',        day: 25, month: 'כסלו' },
+    { name: 'ט״ו בשבט',        day: 15, month: 'שבט' },
+    { name: 'פורים',           day: 14, month: 'אדר' },
+    { name: 'שושן פורים',      day: 15, month: 'אדר' },
+    { name: 'פסח א׳',          day: 15, month: 'ניסן' },
+    { name: 'שביעי של פסח',    day: 21, month: 'ניסן' },
+    { name: 'יום הזכרון',      day: 4,  month: 'אייר' },
+    { name: 'יום העצמאות',     day: 5,  month: 'אייר' },
+    { name: 'ל״ג בעומר',       day: 18, month: 'אייר' },
+    { name: 'יום ירושלים',     day: 28, month: 'אייר' },
+    { name: 'שבועות',          day: 6,  month: 'סיון' },
+    { name: 'צום י״ז בתמוז',   day: 17, month: 'תמוז' },
+    { name: 'תשעה באב',        day: 9,  month: 'אב' },
+  ];
+
+  function migrateSpecial() {
+    let arr = state.data.specialTimes.entries || [];
+    if (arr.length && arr[0] && (Array.isArray(arr[0].times) || arr[0].dateType)) {
+      // Already events
+      state.data.specialTimes.entries = arr.map(ev => ({
+        id: ev.id || String(Math.random()).slice(2),
+        name: ev.name || '',
+        dateType: ev.dateType === 'hebrew' ? 'hebrew' : 'gregorian',
+        date: ev.date || '',
+        hebrewDay: Number(ev.hebrewDay) || 0,
+        hebrewMonth: ev.hebrewMonth || '',
+        times: Array.isArray(ev.times) ? ev.times : [],
+      }));
+      return;
+    }
+    // Flat legacy rows → group by date
+    const groups = new Map();
+    for (const r of arr) {
+      const key = r.date || '';
+      if (!groups.has(key)) groups.set(key, {
+        id: String(Math.random()).slice(2),
+        name: '',
+        dateType: 'gregorian',
+        date: key,
+        hebrewDay: 0,
+        hebrewMonth: '',
+        times: [],
+      });
+      groups.get(key).times.push({ roomId: r.roomId || '', label: r.label || '', time: r.time || '' });
+    }
+    state.data.specialTimes.entries = [...groups.values()];
+  }
+
   function renderSpecial() {
-    const tbody = qs('#sp-table tbody');
-    tbody.innerHTML = '';
-    for (const e of state.data.specialTimes.entries) {
-      tbody.appendChild(renderSpRow(e));
+    const host = qs('#sp-list');
+    host.innerHTML = '';
+    if (!state.data.specialTimes.entries.length) {
+      host.appendChild(el('div', { class: 'empty-state' }, 'אין אירועים — הוסיפו אירוע (חג/תאריך מיוחד).'));
+      return;
+    }
+    for (const ev of state.data.specialTimes.entries) {
+      host.appendChild(renderEventCard(ev));
     }
   }
-  function renderSpRow(entry) {
-    const tr = document.createElement('tr');
-    const mkTd = (field, type='text') => {
-      const td = document.createElement('td');
-      const input = document.createElement('input');
-      input.type = type;
-      input.value = entry[field] ?? '';
-      input.addEventListener('input', (e) => { entry[field] = e.target.value; markDirty(); });
-      td.appendChild(input);
-      return td;
+
+  function renderEventCard(ev) {
+    const card = el('div', { class: 'list-item' });
+    const head = el('div', { class: 'head' },
+      el('strong', {}, ev.name || '(ללא שם)'),
+      el('button', { class: 'btn btn-danger btn-sm', onclick: () => {
+        state.data.specialTimes.entries = state.data.specialTimes.entries.filter(e => e !== ev);
+        markDirty(); renderSpecial();
+      }}, 'מחיקה')
+    );
+
+    const body = el('div', {});
+    const nameInp = document.createElement('input');
+    nameInp.type = 'text';
+    nameInp.placeholder = 'שם האירוע (למשל: שבועות)';
+    nameInp.value = ev.name || '';
+    nameInp.addEventListener('input', () => {
+      ev.name = nameInp.value;
+      head.querySelector('strong').textContent = ev.name || '(ללא שם)';
+      markDirty();
+    });
+    body.appendChild(el('div', { class: 'field' }, el('label', {}, 'שם'), nameInp));
+
+    // Preset
+    const preset = document.createElement('select');
+    preset.appendChild(el('option', { value: '' }, '— חג מוכן (אופציונלי) —'));
+    for (const h of HOLIDAY_PRESETS) preset.appendChild(el('option', { value: h.name }, h.name));
+    preset.addEventListener('change', () => {
+      const p = HOLIDAY_PRESETS.find(h => h.name === preset.value);
+      if (!p) return;
+      ev.name = p.name;
+      ev.dateType = 'hebrew';
+      ev.hebrewDay = p.day;
+      ev.hebrewMonth = p.month;
+      nameInp.value = p.name;
+      head.querySelector('strong').textContent = p.name;
+      markDirty();
+      renderSpecial(); // re-render to reflect new dateType selection
+    });
+    body.appendChild(el('div', { class: 'field' }, el('label', {}, 'מילוי מהיר לפי חג'), preset));
+
+    // Date type
+    const dtWrap = el('div', { class: 'field' });
+    dtWrap.appendChild(el('label', {}, 'סוג תאריך'));
+    const dtSel = document.createElement('select');
+    dtSel.appendChild(el('option', { value: 'hebrew' }, 'תאריך עברי'));
+    dtSel.appendChild(el('option', { value: 'gregorian' }, 'תאריך לועזי'));
+    dtSel.value = ev.dateType === 'gregorian' ? 'gregorian' : 'hebrew';
+    dtSel.addEventListener('change', () => {
+      ev.dateType = dtSel.value;
+      markDirty();
+      renderSpecial();
+    });
+    dtWrap.appendChild(dtSel);
+    body.appendChild(dtWrap);
+
+    if (ev.dateType === 'gregorian') {
+      const di = document.createElement('input');
+      di.type = 'date';
+      di.value = ev.date || '';
+      di.addEventListener('input', () => { ev.date = di.value; markDirty(); });
+      body.appendChild(el('div', { class: 'field' }, el('label', {}, 'תאריך לועזי'), di));
+    } else {
+      const dayInp = document.createElement('input');
+      dayInp.type = 'number';
+      dayInp.min = '1'; dayInp.max = '30';
+      dayInp.value = ev.hebrewDay || '';
+      dayInp.addEventListener('input', () => { ev.hebrewDay = Number(dayInp.value) || 0; markDirty(); });
+      const monthSel = document.createElement('select');
+      monthSel.appendChild(el('option', { value: '' }, '—'));
+      for (const m of HEB_MONTHS) monthSel.appendChild(el('option', { value: m }, m));
+      monthSel.value = ev.hebrewMonth || '';
+      monthSel.addEventListener('change', () => { ev.hebrewMonth = monthSel.value; markDirty(); });
+      body.appendChild(el('div', { class: 'row' },
+        el('div', { class: 'field' }, el('label', {}, 'יום עברי'), dayInp),
+        el('div', { class: 'field' }, el('label', {}, 'חודש עברי'), monthSel),
+      ));
+    }
+
+    // Times list
+    body.appendChild(el('h3', {}, 'זמני תפילה לאירוע'));
+    const timesHost = el('div', { class: 'sp-times' });
+    const drawTimes = () => {
+      timesHost.innerHTML = '';
+      (ev.times || []).forEach((t, idx) => {
+        const roomSel = document.createElement('select');
+        roomSel.appendChild(el('option', { value: '' }, 'כל החדרים'));
+        for (const r of state.data.rooms.rooms) roomSel.appendChild(el('option', { value: r.id }, r.name));
+        roomSel.value = t.roomId || '';
+        roomSel.addEventListener('change', () => { t.roomId = roomSel.value; markDirty(); });
+        const labelInp = document.createElement('input');
+        labelInp.type = 'text';
+        labelInp.placeholder = 'שם התפילה (למשל: שחרית)';
+        labelInp.value = t.label || '';
+        labelInp.addEventListener('input', () => { t.label = labelInp.value; markDirty(); });
+        const timeInp = document.createElement('input');
+        timeInp.type = 'text';
+        timeInp.placeholder = 'HH:MM';
+        timeInp.value = t.time || '';
+        timeInp.addEventListener('input', () => { t.time = timeInp.value; markDirty(); });
+        const rm = el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => {
+          ev.times.splice(idx, 1); markDirty(); drawTimes();
+        }}, '×');
+        timesHost.appendChild(el('div', { class: 'sp-time-row' }, roomSel, labelInp, timeInp, rm));
+      });
+      const add = el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => {
+        ev.times = ev.times || [];
+        ev.times.push({ roomId: '', label: '', time: '' });
+        markDirty(); drawTimes();
+      }}, '+ שעת תפילה');
+      timesHost.appendChild(add);
     };
-    tr.appendChild(mkTd('date', 'date'));
-    // room selector
-    const tdRoom = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.appendChild(el('option', { value: '' }, 'כל החדרים'));
-    for (const r of state.data.rooms.rooms) sel.appendChild(el('option', { value: r.id }, r.name));
-    sel.value = entry.roomId || '';
-    sel.addEventListener('change', () => { entry.roomId = sel.value; markDirty(); });
-    tdRoom.appendChild(sel);
-    tr.appendChild(tdRoom);
-    tr.appendChild(mkTd('label'));
-    tr.appendChild(mkTd('time'));
-    const tdAct = document.createElement('td');
-    tdAct.className = 'col-actions';
-    tdAct.appendChild(el('button', { class: 'btn btn-danger btn-sm', onclick: () => {
-      state.data.specialTimes.entries = state.data.specialTimes.entries.filter(e => e !== entry);
-      markDirty(); renderSpecial();
-    }}, '×'));
-    tr.appendChild(tdAct);
-    return tr;
+    drawTimes();
+    body.appendChild(timesHost);
+
+    card.appendChild(head);
+    card.appendChild(body);
+    return card;
   }
 
   // ---------- CSV ----------
@@ -583,25 +730,6 @@
       markDirty(); renderMemorial();
     });
 
-    // Special times CSV
-    qs('#sp-file').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const text = await file.text();
-      const rows = parseCSV(text);
-      const entries = rows.map(r => ({
-        date: r['תאריך'] || r['date'] || '',
-        roomId: r['חדר'] || r['room'] || r['roomId'] || '',
-        label: r['תפילה'] || r['label'] || '',
-        time: r['שעה'] || r['time'] || '',
-      })).filter(e => e.date && e.label);
-      if (!entries.length) { status('לא זוהו שורות', 'error'); return; }
-      if (!confirm(`לטעון ${entries.length} שורות ולהחליף את הרשימה הנוכחית?`)) return;
-      state.data.specialTimes.entries = entries;
-      markDirty();
-      renderSpecial();
-      status('CSV נטען', 'success');
-    });
   }
 
   // ---------- Save ----------
@@ -698,7 +826,15 @@
       markDirty(); renderAnnouncements();
     });
     qs('#add-sp-btn').addEventListener('click', () => {
-      state.data.specialTimes.entries.push({ date: '', roomId: '', label: '', time: '' });
+      state.data.specialTimes.entries.push({
+        id: String(Math.random()).slice(2),
+        name: '',
+        dateType: 'hebrew',
+        date: '',
+        hebrewDay: 0,
+        hebrewMonth: '',
+        times: [{ roomId: '', label: 'שחרית', time: '' }],
+      });
       markDirty(); renderSpecial();
     });
 
