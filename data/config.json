@@ -1,10 +1,11 @@
 {
   "synagogueName": "בית הכנסת המרכזי",
   "location": {
-    "address": "ירושלים",
-    "latitude": 31.778,
-    "longitude": 35.235,
-    "timezone": "Asia/Jerusalem"
+    "address": "אלקנה 14 ירושלים",
+    "latitude": 31.7940984,
+    "longitude": 35.2138072,
+    "timezone": "Asia/Jerusalem",
+    "candleLightingMinutes": 40
   },
   "displayedZmanim": {
     "alotHaShachar": true,
