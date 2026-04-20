@@ -33,6 +33,6 @@
   "zmanimOverrides": {},
   "design": {
     "theme": "dark",
-    "layout": "horizontal"
+    "layout": "3col"
   }
 }
