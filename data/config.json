@@ -8,14 +8,14 @@
   },
   "displayedZmanim": {
     "alotHaShachar": true,
-    "misheyakir": false,
+    "misheyakir": true,
     "sunrise": true,
     "sofZmanShma": true,
     "sofZmanTfilla": true,
     "chatzot": true,
     "minchaGedola": true,
-    "minchaKetana": false,
-    "plagHaMincha": false,
+    "minchaKetana": true,
+    "plagHaMincha": true,
     "sunset": true,
     "tzeit": true
   },
