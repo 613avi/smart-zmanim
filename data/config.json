@@ -27,5 +27,6 @@
   "rotation": {
     "enabled": false,
     "intervalSeconds": 20
-  }
+  },
+  "zmanimOverrides": {}
 }
