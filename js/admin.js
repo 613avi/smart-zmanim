@@ -15,6 +15,7 @@
     },
     zmanimOverrides: {},
     theme: { accent: '#d4af37', background: '#0e1320' },
+    design: { theme: 'dark', layout: '3col' },
     rotation: { enabled: false, intervalSeconds: 20 },
   };
 
@@ -113,6 +114,7 @@
     if (!state.data.config.location) state.data.config.location = { ...DEFAULT_CONFIG.location };
     if (!state.data.config.displayedZmanim) state.data.config.displayedZmanim = { ...DEFAULT_CONFIG.displayedZmanim };
     if (!state.data.config.zmanimOverrides) state.data.config.zmanimOverrides = {};
+    if (!state.data.config.design) state.data.config.design = { theme: 'dark', layout: '3col' };
     if (!Array.isArray(state.data.rooms.rooms)) state.data.rooms.rooms = [];
     state.data.rooms.rooms = state.data.rooms.rooms.map(normalizeRoom);
     if (!Array.isArray(state.data.memorial.entries)) state.data.memorial.entries = [];
@@ -200,6 +202,10 @@
     qs('#g-lon').value = c.location.longitude ?? '';
     qs('#g-tz').value = c.location.timezone || 'Asia/Jerusalem';
     qs('#g-candle').value = c.location.candleLightingMinutes ?? 18;
+
+    // Design
+    if (qs('#d-theme')) qs('#d-theme').value = c.design?.theme || 'dark';
+    if (qs('#d-layout')) qs('#d-layout').value = c.design?.layout || '3col';
   }
   function bindGeneral() {
     const fields = [
@@ -214,6 +220,18 @@
       qs(sel).addEventListener('input', (e) => { setter(e.target.value); markDirty(); });
     }
     qs('#g-geocode').addEventListener('click', geocodeAddress);
+
+    // Design
+    if (qs('#d-theme')) qs('#d-theme').addEventListener('change', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      state.data.config.design.theme = e.target.value;
+      markDirty();
+    });
+    if (qs('#d-layout')) qs('#d-layout').addEventListener('change', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      state.data.config.design.layout = e.target.value;
+      markDirty();
+    });
   }
   async function geocodeAddress() {
     const address = qs('#g-address').value.trim();
