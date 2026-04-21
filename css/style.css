@@ -701,3 +701,106 @@ html[data-theme="marble"], body[data-theme="marble"] {
 body[data-theme="marble"] .display-body {
     background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
 }
+
+/* ===== STYLES ===== */
+/* Modern style */
+#display-root[data-style="modern"] .card {
+    border: none;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Minimalist style */
+#display-root[data-style="minimalist"] .card {
+    background: transparent;
+    border: none;
+    border-inline-start: 4px solid var(--accent);
+    border-radius: 0;
+    padding: 0.5rem 1.5vw;
+}
+#display-root[data-style="minimalist"] .card h2 {
+    border-bottom: none;
+}
+
+/* Ornate style */
+#display-root[data-style="ornate"] .card {
+    border: 3px double var(--accent);
+    border-radius: 12px;
+}
+#display-root[data-style="ornate"] .card h2 {
+    text-align: center;
+    border-bottom: 2px dashed var(--accent);
+}
+
+/* ===== LAYOUTS (Sidebars) ===== */
+/* Sidebar Right */
+#display-root[data-layout="sidebar-right"] {
+    grid-template-columns: 1fr 2.5fr;
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+        "sidebar main"
+        "mentions main"
+        "announcements main";
+}
+#display-root[data-layout="sidebar-right"] .display-header {
+    grid-area: sidebar;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    align-content: start;
+    text-align: right;
+    gap: 2rem;
+}
+#display-root[data-layout="sidebar-right"] .display-header .brand {
+    text-align: right;
+}
+#display-root[data-layout="sidebar-right"] .clock {
+    justify-content: flex-start;
+}
+#display-root[data-layout="sidebar-right"] .display-main {
+    grid-area: main;
+}
+#display-root[data-layout="sidebar-right"] .mentions-bar {
+    grid-area: mentions;
+}
+#display-root[data-layout="sidebar-right"] .announcements-container {
+    grid-area: announcements;
+}
+#display-root[data-layout="sidebar-right"] .display-footer {
+    display: none;
+}
+
+/* Sidebar Left */
+#display-root[data-layout="sidebar-left"] {
+    grid-template-columns: 2.5fr 1fr;
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+        "main sidebar"
+        "main mentions"
+        "main announcements";
+}
+#display-root[data-layout="sidebar-left"] .display-header {
+    grid-area: sidebar;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    align-content: start;
+    text-align: right;
+    gap: 2rem;
+}
+#display-root[data-layout="sidebar-left"] .display-header .brand {
+    text-align: right;
+}
+#display-root[data-layout="sidebar-left"] .clock {
+    justify-content: flex-start;
+}
+#display-root[data-layout="sidebar-left"] .display-main {
+    grid-area: main;
+}
+#display-root[data-layout="sidebar-left"] .mentions-bar {
+    grid-area: mentions;
+}
+#display-root[data-layout="sidebar-left"] .announcements-container {
+    grid-area: announcements;
+}
+#display-root[data-layout="sidebar-left"] .display-footer {
+    display: none;
+}

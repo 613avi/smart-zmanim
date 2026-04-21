@@ -1,0 +1,10 @@
+127.0.0.1 - - [21/Apr/2026 11:38:08] "HEAD / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:24] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:24] "GET /css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:24] "GET /js/display.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:25] "GET /data/config.json?v=1776772345729 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:25] "GET /data/rooms.json?v=1776772345736 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:25] "GET /data/memorial.json?v=1776772345736 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:25] "GET /data/special-times.json?v=1776772345737 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:25] "GET /data/zmanim-calendar.json?v=1776772345737 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Apr/2026 11:52:25] "GET /data/announcements.json?v=1776772345737 HTTP/1.1" 200 -
