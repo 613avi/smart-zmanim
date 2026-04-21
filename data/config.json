@@ -1,7 +1,7 @@
 {
-  "synagogueName": "בית הכנסת המרכזי",
+  "synagogueName": "\u05d1\u05d9\u05ea \u05d4\u05db\u05e0\u05e1\u05ea \u05d4\u05de\u05e8\u05db\u05d6\u05d9",
   "location": {
-    "address": "אלקנה 14 ירושלים",
+    "address": "\u05d0\u05dc\u05e7\u05e0\u05d4 14 \u05d9\u05e8\u05d5\u05e9\u05dc\u05d9\u05dd",
     "latitude": 31.7940984,
     "longitude": 35.2138072,
     "timezone": "Asia/Jerusalem",
@@ -33,6 +33,7 @@
   "zmanimOverrides": {},
   "design": {
     "theme": "dark",
-    "layout": "3col"
+    "layout": "sidebar-right",
+    "style": "ornate"
   }
 }

@@ -114,7 +114,8 @@
     if (!state.data.config.location) state.data.config.location = { ...DEFAULT_CONFIG.location };
     if (!state.data.config.displayedZmanim) state.data.config.displayedZmanim = { ...DEFAULT_CONFIG.displayedZmanim };
     if (!state.data.config.zmanimOverrides) state.data.config.zmanimOverrides = {};
-    if (!state.data.config.design) state.data.config.design = { theme: 'dark', layout: '3col' };
+    if (!state.data.config.design) state.data.config.design = { theme: 'dark', layout: '3col', style: 'classic' };
+    if (!state.data.config.design.style) state.data.config.design.style = 'classic';
     if (!Array.isArray(state.data.rooms.rooms)) state.data.rooms.rooms = [];
     state.data.rooms.rooms = state.data.rooms.rooms.map(normalizeRoom);
     if (!Array.isArray(state.data.memorial.entries)) state.data.memorial.entries = [];
@@ -205,6 +206,7 @@
 
     // Design
     if (qs('#d-theme')) qs('#d-theme').value = c.design?.theme || 'dark';
+    if (qs('#d-style')) qs('#d-style').value = c.design?.style || 'classic';
     if (qs('#d-layout')) qs('#d-layout').value = c.design?.layout || '3col';
   }
   function bindGeneral() {
@@ -228,6 +230,7 @@
         iframe.contentWindow.postMessage({
           type: 'PREVIEW_DESIGN',
           theme: qs('#d-theme')?.value || 'dark',
+          style: qs('#d-style')?.value || 'classic',
           layout: qs('#d-layout')?.value || '3col'
         }, '*');
       }
@@ -236,6 +239,12 @@
     if (qs('#d-theme')) qs('#d-theme').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.theme = e.target.value;
+      markDirty();
+      updatePreview();
+    });
+    if (qs('#d-style')) qs('#d-style').addEventListener('change', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      state.data.config.design.style = e.target.value;
       markDirty();
       updatePreview();
     });
