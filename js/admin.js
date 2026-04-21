@@ -208,6 +208,8 @@
     if (qs('#d-theme')) qs('#d-theme').value = c.design?.theme || 'dark';
     if (qs('#d-style')) qs('#d-style').value = c.design?.style || 'classic';
     if (qs('#d-layout')) qs('#d-layout').value = c.design?.layout || '3col';
+    if (qs('#d-logo-url')) qs('#d-logo-url').value = c.design?.logoUrl || '';
+    if (qs('#d-bg-url')) qs('#d-bg-url').value = c.design?.backgroundUrl || '';
   }
   function bindGeneral() {
     const fields = [
@@ -231,7 +233,9 @@
           type: 'PREVIEW_DESIGN',
           theme: qs('#d-theme')?.value || 'dark',
           style: qs('#d-style')?.value || 'classic',
-          layout: qs('#d-layout')?.value || '3col'
+          layout: qs('#d-layout')?.value || '3col',
+          logoUrl: qs('#d-logo-url')?.value || '',
+          backgroundUrl: qs('#d-bg-url')?.value || ''
         }, '*');
       }
     };
@@ -251,6 +255,18 @@
     if (qs('#d-layout')) qs('#d-layout').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.layout = e.target.value;
+      markDirty();
+      updatePreview();
+    });
+    if (qs('#d-logo-url')) qs('#d-logo-url').addEventListener('input', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      state.data.config.design.logoUrl = e.target.value;
+      markDirty();
+      updatePreview();
+    });
+    if (qs('#d-bg-url')) qs('#d-bg-url').addEventListener('input', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      state.data.config.design.backgroundUrl = e.target.value;
       markDirty();
       updatePreview();
     });

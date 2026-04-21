@@ -42,7 +42,12 @@ body { min-height: 100vh; }
     grid-template-columns: 1fr auto;
 }
 
-.display-header .brand { text-align: right; }
+.display-header .brand {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
 .display-header h1 {
     font-family: 'Frank Ruhl Libre', serif;
     font-size: clamp(2rem, 3.5vw, 3.5rem);
@@ -57,6 +62,13 @@ body { min-height: 100vh; }
     margin-top: 0.4rem;
 }
 .display-header .sep { margin: 0 0.5rem; opacity: 0.5; }
+
+#institution-logo {
+    max-height: 80px;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    object-fit: contain;
+}
 
 .clock {
     display: flex;
@@ -702,6 +714,22 @@ body[data-theme="marble"] .display-body {
     background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
 }
 
+/* Parchment theme */
+html[data-theme="parchment"], body[data-theme="parchment"] {
+    --bg: #fdf5e6;
+    --bg-card: rgba(210, 180, 140, 0.2);
+    --bg-card-hover: rgba(210, 180, 140, 0.4);
+    --text: #3b2f2f;
+    --text-dim: #5c4033;
+    --accent: #8b4513;
+    --accent-2: #5c4033;
+    --border: rgba(139, 69, 19, 0.3);
+}
+
+body[data-theme="parchment"] .display-body {
+    background: radial-gradient(ellipse at center, #fffafa 0%, var(--bg) 100%);
+}
+
 /* ===== STYLES ===== */
 /* Modern style */
 #display-root[data-style="modern"] .card {
@@ -891,6 +919,7 @@ body[data-theme="marble"] .display-body {
 }
 #display-root[data-layout="center-clock"] .display-header .brand {
     text-align: center;
+    align-items: center;
 }
 #display-root[data-layout="center-clock"] .clock {
     flex-direction: column;

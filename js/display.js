@@ -594,9 +594,36 @@
     const theme = state.config.design.theme || 'dark';
     const layout = state.config.design.layout || '3col';
     const style = state.config.design.style || 'classic';
+    const bgUrl = state.config.design.backgroundUrl || '';
+    const logoUrl = state.config.design.logoUrl || '';
 
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
+
+    // Apply custom background image if provided
+    if (bgUrl) {
+      document.body.style.backgroundImage = `url('${bgUrl}')`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+    } else {
+      document.body.style.backgroundImage = '';
+    }
+
+    // Apply logo if provided
+    let logoImg = qs('#institution-logo');
+    if (logoUrl) {
+      if (!logoImg) {
+        logoImg = document.createElement('img');
+        logoImg.id = 'institution-logo';
+        const brandDiv = qs('.brand');
+        if (brandDiv) brandDiv.insertBefore(logoImg, brandDiv.firstChild);
+      }
+      logoImg.src = logoUrl;
+      logoImg.style.display = 'block';
+    } else if (logoImg) {
+      logoImg.style.display = 'none';
+    }
+
     const root = qs('#display-root');
     if (root) {
       root.setAttribute('data-layout', layout);
@@ -686,6 +713,8 @@
         if (event.data.theme) state.config.design.theme = event.data.theme;
         if (event.data.style) state.config.design.style = event.data.style;
         if (event.data.layout) state.config.design.layout = event.data.layout;
+        if (typeof event.data.logoUrl === 'string') state.config.design.logoUrl = event.data.logoUrl;
+        if (typeof event.data.backgroundUrl === 'string') state.config.design.backgroundUrl = event.data.backgroundUrl;
         applyDesign();
       }
     });
