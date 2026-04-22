@@ -114,8 +114,12 @@
     if (!state.data.config.location) state.data.config.location = { ...DEFAULT_CONFIG.location };
     if (!state.data.config.displayedZmanim) state.data.config.displayedZmanim = { ...DEFAULT_CONFIG.displayedZmanim };
     if (!state.data.config.zmanimOverrides) state.data.config.zmanimOverrides = {};
+<<<<<<< HEAD
     if (!state.data.config.design) state.data.config.design = { theme: 'dark', layout: '3col', style: 'classic' };
     if (!state.data.config.design.style) state.data.config.design.style = 'classic';
+=======
+    if (!state.data.config.design) state.data.config.design = { theme: 'dark', layout: '3col' };
+>>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
     if (!Array.isArray(state.data.rooms.rooms)) state.data.rooms.rooms = [];
     state.data.rooms.rooms = state.data.rooms.rooms.map(normalizeRoom);
     if (!Array.isArray(state.data.memorial.entries)) state.data.memorial.entries = [];
@@ -206,10 +210,11 @@
 
     // Design
     if (qs('#d-theme')) qs('#d-theme').value = c.design?.theme || 'dark';
+<<<<<<< HEAD
     if (qs('#d-style')) qs('#d-style').value = c.design?.style || 'classic';
+=======
+>>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
     if (qs('#d-layout')) qs('#d-layout').value = c.design?.layout || '3col';
-    if (qs('#d-logo-url')) qs('#d-logo-url').value = c.design?.logoUrl || '';
-    if (qs('#d-bg-url')) qs('#d-bg-url').value = c.design?.backgroundUrl || '';
   }
   function bindGeneral() {
     const fields = [
@@ -232,14 +237,11 @@
         iframe.contentWindow.postMessage({
           type: 'PREVIEW_DESIGN',
           theme: qs('#d-theme')?.value || 'dark',
-          style: qs('#d-style')?.value || 'classic',
 <<<<<<< HEAD
-          layout: qs('#d-layout')?.value || '3col'
+          style: qs('#d-style')?.value || 'classic',
 =======
-          layout: qs('#d-layout')?.value || '3col',
-          logoUrl: qs('#d-logo-url')?.value || '',
-          backgroundUrl: qs('#d-bg-url')?.value || ''
->>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
+>>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
+          layout: qs('#d-layout')?.value || '3col'
         }, '*');
       }
     };
@@ -250,27 +252,18 @@
       markDirty();
       updatePreview();
     });
+<<<<<<< HEAD
     if (qs('#d-style')) qs('#d-style').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.style = e.target.value;
       markDirty();
       updatePreview();
     });
+=======
+>>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
     if (qs('#d-layout')) qs('#d-layout').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.layout = e.target.value;
-      markDirty();
-      updatePreview();
-    });
-    if (qs('#d-logo-url')) qs('#d-logo-url').addEventListener('input', (e) => {
-      if (!state.data.config.design) state.data.config.design = {};
-      state.data.config.design.logoUrl = e.target.value;
-      markDirty();
-      updatePreview();
-    });
-    if (qs('#d-bg-url')) qs('#d-bg-url').addEventListener('input', (e) => {
-      if (!state.data.config.design) state.data.config.design = {};
-      state.data.config.design.backgroundUrl = e.target.value;
       markDirty();
       updatePreview();
     });

@@ -42,12 +42,7 @@ body { min-height: 100vh; }
     grid-template-columns: 1fr auto;
 }
 
-.display-header .brand {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
+.display-header .brand { text-align: right; }
 .display-header h1 {
     font-family: 'Frank Ruhl Libre', serif;
     font-size: clamp(2rem, 3.5vw, 3.5rem);
@@ -62,13 +57,6 @@ body { min-height: 100vh; }
     margin-top: 0.4rem;
 }
 .display-header .sep { margin: 0 0.5rem; opacity: 0.5; }
-
-#institution-logo {
-    max-height: 80px;
-    margin-bottom: 0.5rem;
-    border-radius: 8px;
-    object-fit: contain;
-}
 
 .clock {
     display: flex;
@@ -713,26 +701,8 @@ html[data-theme="marble"], body[data-theme="marble"] {
 body[data-theme="marble"] .display-body {
     background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
 }
-
 <<<<<<< HEAD
-=======
-/* Parchment theme */
-html[data-theme="parchment"], body[data-theme="parchment"] {
-    --bg: #fdf5e6;
-    --bg-card: rgba(210, 180, 140, 0.2);
-    --bg-card-hover: rgba(210, 180, 140, 0.4);
-    --text: #3b2f2f;
-    --text-dim: #5c4033;
-    --accent: #8b4513;
-    --accent-2: #5c4033;
-    --border: rgba(139, 69, 19, 0.3);
-}
 
-body[data-theme="parchment"] .display-body {
-    background: radial-gradient(ellipse at center, #fffafa 0%, var(--bg) 100%);
-}
-
->>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
 /* ===== STYLES ===== */
 /* Modern style */
 #display-root[data-style="modern"] .card {
@@ -763,42 +733,6 @@ body[data-theme="parchment"] .display-body {
     border-bottom: 2px dashed var(--accent);
 }
 
-<<<<<<< HEAD
-=======
-/* Dense style (info-packed) */
-#display-root[data-style="dense"] .card {
-    padding: clamp(0.5rem, 1vw, 1rem);
-    border-radius: 4px;
-}
-#display-root[data-style="dense"] .card h2 {
-    margin: 0 0 0.5rem;
-    padding-bottom: 0.3rem;
-    font-size: clamp(1.2rem, 1.5vw, 1.6rem);
-}
-#display-root[data-style="dense"] .zmanim-card table,
-#display-root[data-style="dense"] .tefillot-card table {
-    font-size: clamp(0.85rem, 1.1vw, 1.2rem);
-}
-#display-root[data-style="dense"] .zmanim-card td,
-#display-root[data-style="dense"] .tefillot-card td {
-    padding: 0.2rem 0.15rem;
-}
-#display-root[data-style="dense"] .tefillot-card .prayer-block h3,
-#display-root[data-style="dense"] .tefillot-card .room-block h3 {
-    font-size: clamp(1rem, 1.2vw, 1.3rem);
-    margin: 0 0 0.2rem;
-}
-#display-root[data-style="dense"] .tefillot-card .prayer-block {
-    margin-bottom: 0.4rem;
-}
-#display-root[data-style="dense"] #memorial-list {
-    font-size: clamp(0.85rem, 1.1vw, 1.2rem);
-}
-#display-root[data-style="dense"] #memorial-list li {
-    padding: 0.2rem 0;
-}
-
->>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
 /* ===== LAYOUTS (Sidebars) ===== */
 /* Sidebar Right */
 #display-root[data-layout="sidebar-right"] {
@@ -871,83 +805,5 @@ body[data-theme="parchment"] .display-body {
 #display-root[data-layout="sidebar-left"] .display-footer {
     display: none;
 }
-<<<<<<< HEAD
 =======
-
-/* Dashboard Layout */
-#display-root[data-layout="dashboard"] .display-main {
-    grid-template-columns: 1fr 2fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-        "zmanim tefillot"
-        "memorial tefillot";
-}
-#display-root[data-layout="dashboard"] .zmanim-card { grid-area: zmanim; }
-#display-root[data-layout="dashboard"] .tefillot-card { grid-area: tefillot; }
-#display-root[data-layout="dashboard"] .memorial-card { grid-area: memorial; }
-#display-root[data-layout="dashboard"] .tefillot-card .scroll-inner {
-    column-count: 2;
-    column-gap: 2rem;
-}
-#display-root[data-layout="dashboard"] .tefillot-card .prayer-block {
-    break-inside: avoid;
-    page-break-inside: avoid;
-}
-
-/* Center-Clock Layout */
-#display-root[data-layout="center-clock"] {
-    grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: auto 1fr auto auto;
-    grid-template-areas:
-        "zmanim header main"
-        "zmanim header memorial"
-        "mentions mentions mentions"
-        "announcements announcements announcements";
-    gap: 1.5vw;
-}
-#display-root[data-layout="center-clock"] .display-main {
-    display: contents; /* children participate in root grid */
-}
-#display-root[data-layout="center-clock"] .zmanim-card {
-    grid-area: zmanim;
-}
-#display-root[data-layout="center-clock"] .tefillot-card {
-    grid-area: main;
-}
-#display-root[data-layout="center-clock"] .memorial-card {
-    grid-area: memorial;
-}
-#display-root[data-layout="center-clock"] .display-header {
-    grid-area: header;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    align-content: start;
-    text-align: center;
-    gap: 2rem;
-}
-#display-root[data-layout="center-clock"] .display-header .brand {
-    text-align: center;
-    align-items: center;
-}
-#display-root[data-layout="center-clock"] .clock {
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
-}
-#display-root[data-layout="center-clock"] #current-time {
-    font-size: clamp(4rem, 8vw, 8rem);
-    line-height: 1;
-}
-#display-root[data-layout="center-clock"] #current-seconds {
-    font-size: clamp(2rem, 3.5vw, 3.5rem);
-}
-#display-root[data-layout="center-clock"] .mentions-bar {
-    grid-area: mentions;
-}
-#display-root[data-layout="center-clock"] .announcements-container {
-    grid-area: announcements;
-}
-#display-root[data-layout="center-clock"] .display-footer {
-    display: none;
-}
->>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
+>>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
