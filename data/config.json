@@ -32,8 +32,8 @@
   },
   "zmanimOverrides": {},
   "design": {
-    "theme": "wood",
+    "theme": "carved",
     "layout": "3col",
-    "style": "ornate"
+    "style": "classic"
   }
 }
