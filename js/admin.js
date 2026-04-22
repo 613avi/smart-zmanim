@@ -116,6 +116,8 @@
     if (!state.data.config.zmanimOverrides) state.data.config.zmanimOverrides = {};
     if (!state.data.config.design) state.data.config.design = { theme: 'dark', layout: '3col', style: 'classic' };
     if (!state.data.config.design.style) state.data.config.design.style = 'classic';
+    if (typeof state.data.config.design.backgroundImage !== 'string') state.data.config.design.backgroundImage = '';
+    if (typeof state.data.config.design.backgroundOverlay !== 'number') state.data.config.design.backgroundOverlay = 0.45;
     if (!Array.isArray(state.data.rooms.rooms)) state.data.rooms.rooms = [];
     state.data.rooms.rooms = state.data.rooms.rooms.map(normalizeRoom);
     if (!Array.isArray(state.data.memorial.entries)) state.data.memorial.entries = [];
@@ -208,6 +210,12 @@
     if (qs('#d-theme')) qs('#d-theme').value = c.design?.theme || 'dark';
     if (qs('#d-style')) qs('#d-style').value = c.design?.style || 'classic';
     if (qs('#d-layout')) qs('#d-layout').value = c.design?.layout || '3col';
+    if (qs('#d-bg-image')) qs('#d-bg-image').value = c.design?.backgroundImage || '';
+    if (qs('#d-bg-overlay')) {
+      const pct = Math.round((c.design?.backgroundOverlay ?? 0.45) * 100);
+      qs('#d-bg-overlay').value = pct;
+      if (qs('#d-bg-overlay-val')) qs('#d-bg-overlay-val').textContent = pct + '%';
+    }
   }
   function bindGeneral() {
     const fields = [
@@ -231,7 +239,9 @@
           type: 'PREVIEW_DESIGN',
           theme: qs('#d-theme')?.value || 'dark',
           style: qs('#d-style')?.value || 'classic',
-          layout: qs('#d-layout')?.value || '3col'
+          layout: qs('#d-layout')?.value || '3col',
+          backgroundImage: qs('#d-bg-image')?.value || '',
+          backgroundOverlay: (parseInt(qs('#d-bg-overlay')?.value, 10) || 45) / 100
         }, '*');
       }
     };
@@ -251,6 +261,20 @@
     if (qs('#d-layout')) qs('#d-layout').addEventListener('change', (e) => {
       if (!state.data.config.design) state.data.config.design = {};
       state.data.config.design.layout = e.target.value;
+      markDirty();
+      updatePreview();
+    });
+    if (qs('#d-bg-image')) qs('#d-bg-image').addEventListener('input', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      state.data.config.design.backgroundImage = e.target.value.trim();
+      markDirty();
+      updatePreview();
+    });
+    if (qs('#d-bg-overlay')) qs('#d-bg-overlay').addEventListener('input', (e) => {
+      if (!state.data.config.design) state.data.config.design = {};
+      const pct = parseInt(e.target.value, 10) || 0;
+      state.data.config.design.backgroundOverlay = pct / 100;
+      if (qs('#d-bg-overlay-val')) qs('#d-bg-overlay-val').textContent = pct + '%';
       markDirty();
       updatePreview();
     });

@@ -227,12 +227,29 @@
                 <div class="field">
                     <label for="d-theme">ערכת נושא (צבעים)</label>
                     <select id="d-theme">
-                        <option value="dark">כהה (ברירת מחדל)</option>
-                        <option value="light">בהיר ונקי</option>
-                        <option value="blue">כחול עמוק</option>
-                        <option value="wood">עץ (קלאסי)</option>
-                        <option value="marble">שיש (יוקרתי)</option>
+                        <optgroup label="ערכות צבע">
+                            <option value="dark">כהה (ברירת מחדל)</option>
+                            <option value="light">בהיר ונקי</option>
+                            <option value="blue">כחול עמוק</option>
+                            <option value="wood">עץ (קלאסי)</option>
+                            <option value="marble">שיש (יוקרתי)</option>
+                        </optgroup>
+                        <optgroup label="מבוסס תמונה">
+                            <option value="stone">אבן ירושלמית</option>
+                            <option value="parchment">קלף עתיק</option>
+                            <option value="carved">עץ מגולף (מסגרת זהב)</option>
+                        </optgroup>
                     </select>
+                </div>
+                <div class="field">
+                    <label for="d-bg-image">תמונת רקע מותאמת (URL, אופציונלי)</label>
+                    <input type="text" id="d-bg-image" placeholder="https://... (יחליף את רקע ערכת הנושא)">
+                    <small style="color:#666;">הזינו כתובת תמונה להתאמה אישית של הרקע. השאירו ריק כדי להשתמש ברקע של ערכת הנושא.</small>
+                </div>
+                <div class="field">
+                    <label for="d-bg-overlay">חשכת רקע (<span id="d-bg-overlay-val">45%</span>)</label>
+                    <input type="range" id="d-bg-overlay" min="0" max="90" step="5" value="45">
+                    <small style="color:#666;">שולט בכהות השכבה מעל תמונת הרקע המותאמת לקריאות הטקסט.</small>
                 </div>
                 <div class="field">
                     <label for="d-style">סגנון אלמנטים</label>

@@ -591,9 +591,12 @@
 
   function applyDesign() {
     if (!state.config || !state.config.design) return;
-    const theme = state.config.design.theme || 'dark';
-    const layout = state.config.design.layout || '3col';
-    const style = state.config.design.style || 'classic';
+    const d = state.config.design;
+    const theme = d.theme || 'dark';
+    const layout = d.layout || '3col';
+    const style = d.style || 'classic';
+    const bgImage = (typeof d.backgroundImage === 'string' ? d.backgroundImage : '').trim();
+    const overlay = typeof d.backgroundOverlay === 'number' ? d.backgroundOverlay : 0.45;
 
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
@@ -601,6 +604,17 @@
     if (root) {
       root.setAttribute('data-layout', layout);
       root.setAttribute('data-style', style);
+    }
+
+    if (bgImage) {
+      const safeUrl = bgImage.replace(/["'\\)]/g, '');
+      document.body.style.setProperty('--custom-bg-url', `url("${safeUrl}")`);
+      document.body.style.setProperty('--bg-overlay', String(Math.min(0.9, Math.max(0, overlay))));
+      document.body.setAttribute('data-custom-bg', '1');
+    } else {
+      document.body.removeAttribute('data-custom-bg');
+      document.body.style.removeProperty('--custom-bg-url');
+      document.body.style.removeProperty('--bg-overlay');
     }
   }
 
@@ -686,6 +700,8 @@
         if (event.data.theme) state.config.design.theme = event.data.theme;
         if (event.data.style) state.config.design.style = event.data.style;
         if (event.data.layout) state.config.design.layout = event.data.layout;
+        if (typeof event.data.backgroundImage === 'string') state.config.design.backgroundImage = event.data.backgroundImage;
+        if (typeof event.data.backgroundOverlay === 'number') state.config.design.backgroundOverlay = event.data.backgroundOverlay;
         applyDesign();
       }
     });
