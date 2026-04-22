@@ -701,7 +701,6 @@ html[data-theme="marble"], body[data-theme="marble"] {
 body[data-theme="marble"] .display-body {
     background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
 }
-<<<<<<< HEAD
 
 /* ===== STYLES ===== */
 /* Modern style */
@@ -805,5 +804,3 @@ body[data-theme="marble"] .display-body {
 #display-root[data-layout="sidebar-left"] .display-footer {
     display: none;
 }
-=======
->>>>>>> 6a689c0 (feat: add themes and layouts with live preview)

@@ -30,14 +30,10 @@
     "enabled": false,
     "intervalSeconds": 20
   },
-<<<<<<< HEAD
   "zmanimOverrides": {},
   "design": {
     "theme": "wood",
     "layout": "3col",
     "style": "ornate"
   }
-=======
-  "zmanimOverrides": {}
->>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
 }

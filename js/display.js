@@ -593,22 +593,15 @@
     if (!state.config || !state.config.design) return;
     const theme = state.config.design.theme || 'dark';
     const layout = state.config.design.layout || '3col';
-<<<<<<< HEAD
     const style = state.config.design.style || 'classic';
-=======
->>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
 
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     const root = qs('#display-root');
-<<<<<<< HEAD
     if (root) {
       root.setAttribute('data-layout', layout);
       root.setAttribute('data-style', style);
     }
-=======
-    if (root) root.setAttribute('data-layout', layout);
->>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
   }
 
   async function refreshAll() {
@@ -691,10 +684,7 @@
         if (!state.config) state.config = {};
         if (!state.config.design) state.config.design = {};
         if (event.data.theme) state.config.design.theme = event.data.theme;
-<<<<<<< HEAD
         if (event.data.style) state.config.design.style = event.data.style;
-=======
->>>>>>> 6a689c0 (feat: add themes and layouts with live preview)
         if (event.data.layout) state.config.design.layout = event.data.layout;
         applyDesign();
       }
