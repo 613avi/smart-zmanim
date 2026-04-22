@@ -32,9 +32,15 @@
   },
   "zmanimOverrides": {},
   "design": {
+<<<<<<< HEAD
+    "theme": "wood",
+    "layout": "3col",
+    "style": "ornate"
+=======
     "theme": "marble",
     "layout": "dashboard",
     "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logo_of_the_Ministry_of_Education_of_Israel.svg/200px-Logo_of_the_Ministry_of_Education_of_Israel.svg.png",
     "backgroundUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Parchment-texture.jpg/1200px-Parchment-texture.jpg"
+>>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
   }
 }

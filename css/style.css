@@ -714,6 +714,8 @@ body[data-theme="marble"] .display-body {
     background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
 }
 
+<<<<<<< HEAD
+=======
 /* Parchment theme */
 html[data-theme="parchment"], body[data-theme="parchment"] {
     --bg: #fdf5e6;
@@ -730,6 +732,7 @@ body[data-theme="parchment"] .display-body {
     background: radial-gradient(ellipse at center, #fffafa 0%, var(--bg) 100%);
 }
 
+>>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
 /* ===== STYLES ===== */
 /* Modern style */
 #display-root[data-style="modern"] .card {
@@ -760,6 +763,8 @@ body[data-theme="parchment"] .display-body {
     border-bottom: 2px dashed var(--accent);
 }
 
+<<<<<<< HEAD
+=======
 /* Dense style (info-packed) */
 #display-root[data-style="dense"] .card {
     padding: clamp(0.5rem, 1vw, 1rem);
@@ -793,6 +798,7 @@ body[data-theme="parchment"] .display-body {
     padding: 0.2rem 0;
 }
 
+>>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
 /* ===== LAYOUTS (Sidebars) ===== */
 /* Sidebar Right */
 #display-root[data-layout="sidebar-right"] {
@@ -865,6 +871,8 @@ body[data-theme="parchment"] .display-body {
 #display-root[data-layout="sidebar-left"] .display-footer {
     display: none;
 }
+<<<<<<< HEAD
+=======
 
 /* Dashboard Layout */
 #display-root[data-layout="dashboard"] .display-main {
@@ -942,3 +950,4 @@ body[data-theme="parchment"] .display-body {
 #display-root[data-layout="center-clock"] .display-footer {
     display: none;
 }
+>>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)

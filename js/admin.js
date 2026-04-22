@@ -233,9 +233,13 @@
           type: 'PREVIEW_DESIGN',
           theme: qs('#d-theme')?.value || 'dark',
           style: qs('#d-style')?.value || 'classic',
+<<<<<<< HEAD
+          layout: qs('#d-layout')?.value || '3col'
+=======
           layout: qs('#d-layout')?.value || '3col',
           logoUrl: qs('#d-logo-url')?.value || '',
           backgroundUrl: qs('#d-bg-url')?.value || ''
+>>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
         }, '*');
       }
     };

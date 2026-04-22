@@ -594,8 +594,11 @@
     const theme = state.config.design.theme || 'dark';
     const layout = state.config.design.layout || '3col';
     const style = state.config.design.style || 'classic';
+<<<<<<< HEAD
+=======
     const bgUrl = state.config.design.backgroundUrl || '';
     const logoUrl = state.config.design.logoUrl || '';
+>>>>>>> f36873e (feat: add multiple layouts, image-based themes, and institution logo)
 
     document.body.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
