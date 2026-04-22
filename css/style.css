@@ -702,6 +702,81 @@ body[data-theme="marble"] .display-body {
     background: radial-gradient(ellipse at top, #ffffff 0%, var(--bg) 70%);
 }
 
+/* ===== IMAGE-BASED THEMES ===== */
+/* Jerusalem Stone */
+html[data-theme="stone"], body[data-theme="stone"] {
+    --bg: #c9b68c;
+    --bg-card: rgba(30, 18, 6, 0.5);
+    --bg-card-hover: rgba(30, 18, 6, 0.65);
+    --text: #fff8ec;
+    --text-dim: #ead7af;
+    --accent: #ffd27a;
+    --accent-2: #ffb347;
+    --border: rgba(255, 210, 122, 0.45);
+}
+body[data-theme="stone"] .display-body {
+    background:
+        linear-gradient(rgba(28, 18, 6, 0.55), rgba(28, 18, 6, 0.65)),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><defs><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' seed='3'/><feColorMatrix values='0 0 0 0 0.83 0 0 0 0 0.72 0 0 0 0 0.52 0 0 0 0.75 0'/></filter></defs><rect width='100%25' height='100%25' fill='%23d4c196'/><rect width='100%25' height='100%25' filter='url(%23n)'/><g stroke='%23867152' stroke-width='2' opacity='0.45' fill='none'><path d='M0 100 L600 100 M0 220 L600 220 M0 320 L600 320'/><path d='M150 0 L150 100 M320 100 L320 220 M480 0 L480 100 M90 220 L90 320 M260 220 L260 320 M440 220 L440 320 M130 320 L130 400 M310 320 L310 400 M480 320 L480 400'/></g></svg>");
+    background-size: cover, 600px 400px;
+    background-repeat: no-repeat, repeat;
+}
+
+/* Parchment */
+html[data-theme="parchment"], body[data-theme="parchment"] {
+    --bg: #efe0c0;
+    --bg-card: rgba(60, 30, 10, 0.08);
+    --bg-card-hover: rgba(60, 30, 10, 0.14);
+    --text: #3a2511;
+    --text-dim: #6d5635;
+    --accent: #8b0000;
+    --accent-2: #2e4a8a;
+    --border: rgba(139, 0, 0, 0.35);
+}
+body[data-theme="parchment"] .display-body {
+    background:
+        radial-gradient(ellipse at center, rgba(239, 224, 192, 0) 35%, rgba(132, 90, 40, 0.4) 100%),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><defs><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.22 0 0 0 0 0.08 0 0 0 0.28 0'/></filter></defs><rect width='100%25' height='100%25' fill='%23efe0c0'/><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>");
+    background-size: cover, 400px 400px;
+    background-repeat: no-repeat, repeat;
+}
+
+/* Carved Wood (dark, ornate) */
+html[data-theme="carved"], body[data-theme="carved"] {
+    --bg: #2d1a0a;
+    --bg-card: rgba(0, 0, 0, 0.5);
+    --bg-card-hover: rgba(0, 0, 0, 0.65);
+    --text: #f4e4c1;
+    --text-dim: #c9a87a;
+    --accent: #ffcf5b;
+    --accent-2: #d4932b;
+    --border: rgba(255, 207, 91, 0.45);
+}
+body[data-theme="carved"] .display-body {
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><defs><filter id='w'><feTurbulence type='turbulence' baseFrequency='0.04 0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.14 0 0 0 0 0.07 0 0 0 0 0.03 0 0 0 0.9 0'/></filter></defs><rect width='100%25' height='100%25' fill='%235c3619'/><rect width='100%25' height='100%25' filter='url(%23w)'/></svg>");
+    background-size: cover, 300px 300px;
+    background-repeat: no-repeat, repeat;
+}
+body[data-theme="carved"] .display-body::before {
+    content: '';
+    position: fixed;
+    inset: 0.4vh 0.4vw;
+    border: 3px double var(--accent);
+    border-radius: 10px;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.35);
+    z-index: 50;
+}
+
+/* ===== CUSTOM BACKGROUND IMAGE (overrides theme background) ===== */
+body[data-custom-bg="1"] .display-body {
+    background:
+        linear-gradient(rgba(0, 0, 0, var(--bg-overlay, 0.45)), rgba(0, 0, 0, var(--bg-overlay, 0.45))),
+        var(--custom-bg-url, none) center/cover no-repeat;
+}
+
 /* ===== STYLES ===== */
 /* Modern style */
 #display-root[data-style="modern"] .card {
